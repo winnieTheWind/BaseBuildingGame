@@ -2,4 +2,10 @@
 <Sprites>
 	<Sprite name="Empty" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
 	<Sprite name="Grass" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Concrete_Slab" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Stone_Panel" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Wood_Panel" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	
+	
+
 </Sprites>

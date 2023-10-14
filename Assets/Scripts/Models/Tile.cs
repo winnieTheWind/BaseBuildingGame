@@ -6,7 +6,7 @@ using System.Xml;
 using MoonSharp.Interpreter;
 using System.Collections.Generic;
 
-public enum TileType { Empty, Grass };
+public enum TileType { Empty, Grass, Concrete_Slab, Stone_Panel, Wood_Panel };
 
 public enum ENTERABILITY { Yes, Never, Soon };
 

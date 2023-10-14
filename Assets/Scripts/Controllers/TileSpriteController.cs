@@ -9,10 +9,14 @@ public class TileSpriteController : MonoBehaviour
 
     Dictionary<Tile, GameObject> tileGameObjectMap;
 
+    public InventoryTileController inventoryTileController;
+
     World world
     {
         get { return WorldController.Instance.world; }
     }
+
+    public string TileTypeFileName = "";
 
     void Start()
     {
@@ -74,24 +78,22 @@ public class TileSpriteController : MonoBehaviour
             return;
         }
 
-        if (tile_data.Type == TileType.Grass)
+        LoadSprite(tile_go, tile_data, TileType.Empty);
+        LoadSprite(tile_go, tile_data, TileType.Wood_Panel);
+        LoadSprite(tile_go, tile_data, TileType.Stone_Panel);
+        LoadSprite(tile_go, tile_data, TileType.Grass);
+        LoadSprite(tile_go, tile_data, TileType.Concrete_Slab);
+    }
+
+    private void LoadSprite(GameObject tile_go, Tile tile_data, TileType type)
+    {
+        if (tile_data.Type == type)
         {
             tile_go.GetComponent<SpriteRenderer>().material = TileMaterial;
-            tile_go.GetComponent<SpriteRenderer>().sprite = SpriteManager.current.GetSprite("Tiles", "Grass");
+            tile_go.GetComponent<SpriteRenderer>().sprite = SpriteManager.current.GetSprite("Tiles", type.ToString());
             tile_go.transform.localScale = new Vector3(2, 2, 2);
+        }
 
-        }
-        else if (tile_data.Type == TileType.Empty)
-        {
-            tile_go.GetComponent<SpriteRenderer>().material = TileMaterial;
-            tile_go.GetComponent<SpriteRenderer>().sprite = SpriteManager.current.GetSprite("Tiles", "Empty");
-            tile_go.transform.localScale = new Vector3(2, 2, 2);
-
-        }
-        else
-        {
-            Debug.LogError("OnTileTypeChanged - Unrecognized tile type.");
-        }
     }
 }
 

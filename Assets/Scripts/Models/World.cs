@@ -563,6 +563,8 @@ public class World : IXmlSerializable
 
         cbTileChanged(t);
 
+        
+
         InvalidateTileGraph();
     }
 
