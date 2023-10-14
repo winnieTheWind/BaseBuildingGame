@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags: []
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: Tiles
+    uniqueID: 1457839183
+    locked: 0
+  - name: Characters
+    uniqueID: 432859555
+    locked: 0
+  - name: Jobs
+    uniqueID: 2299646397
+    locked: 0
+  - name: Furniture
+    uniqueID: 2008520717
+    locked: 0
+  - name: Inventory
+    uniqueID: 232718201
+    locked: 0
+  - name: InventoryUI
+    uniqueID: 2286137135
+    locked: 0
+  - name: TileUI
+    uniqueID: 3653072065
+    locked: 0
+  - name: Cursor
+    uniqueID: 1641373211
+    locked: 0
