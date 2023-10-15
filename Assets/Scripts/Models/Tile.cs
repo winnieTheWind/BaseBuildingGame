@@ -6,14 +6,16 @@ using System.Xml;
 using MoonSharp.Interpreter;
 using System.Collections.Generic;
 
-public enum TileType { Empty, Grass, Concrete_Slab, Stone_Panel, Wood_Panel };
+public enum TileType { Empty, Grass, Concrete_Slab, Stone_Panel, Wood_Panel, 
+    Clean_Concrete_Slab, Concrete_Slab2, Cracked_Slab, Road1, Road2, Road3, Road4, 
+    Road5};
 
 public enum ENTERABILITY { Yes, Never, Soon };
 
 [MoonSharpUserData]
 public class Tile : IXmlSerializable, ISelectableInterface
 {
-    TileType _type = TileType.Empty;
+    TileType _type = TileType.Grass;
 
     public TileType Type { 
         get { 

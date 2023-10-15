@@ -3155,11 +3155,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileObjects:
-  - {fileID: 11400000, guid: bc600ff82caf0e448a80445f1b48882a, type: 2}
-  - {fileID: 11400000, guid: d81e2aabeea101e4ea90f574c6f1b877, type: 2}
-  - {fileID: 11400000, guid: 026c1657cb023bf41817ac3856d0df80, type: 2}
-  - {fileID: 11400000, guid: 1b9e46e39c44df0498228f73ddf4656f, type: 2}
-  - {fileID: 11400000, guid: 5485578555c3ad443916852d33753814, type: 2}
+  - {fileID: 11400000, guid: 45d36e024adc46243bd26ed217549722, type: 2}
+  - {fileID: 11400000, guid: fc5b8571dfc6db94ca73b63417bcde07, type: 2}
+  - {fileID: 11400000, guid: 68ac613d3504ddd4ba953772cadc5378, type: 2}
+  - {fileID: 11400000, guid: 82eccbba7d96513428fe21ed17762807, type: 2}
+  - {fileID: 11400000, guid: 4563481f1daee0f46b95226be403cb98, type: 2}
+  - {fileID: 11400000, guid: 6ab69d8efcaef794482f0ff7e1c85d1d, type: 2}
+  - {fileID: 11400000, guid: c70a62f333a668f4b9d524967a7d974a, type: 2}
+  - {fileID: 11400000, guid: 1e550f8669a740343802eadc684939bd, type: 2}
+  - {fileID: 11400000, guid: 9a52cd8160462b04b949e639071acb3f, type: 2}
+  - {fileID: 11400000, guid: 342e5885fed53f34cae7ef85916a80f7, type: 2}
+  - {fileID: 11400000, guid: 3a3cbabfeebf1fc4989432e1878b057b, type: 2}
+  - {fileID: 11400000, guid: 2301e350dc93bbe47b8eb88b70016af9, type: 2}
+  - {fileID: 11400000, guid: 87050ce3e0cf99c468681bb5a26227ca, type: 2}
   content: {fileID: 1042430775}
   prefab: {fileID: 6393324680468799682, guid: 9fab2a825e3e92f458df5be6b855d647, type: 3}
   bmc: {fileID: 1090116015}
@@ -4339,7 +4347,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cameraControls: {fileID: -944628639613478452, guid: 31d64cb914994aa46acf9c4e2dc2896b, type: 3}
-  panSpeed: 3
+  panSpeed: 6
   Cursor: {fileID: 5942877007985258043, guid: ec9bc14e004bd8b46b125c40b14a2135, type: 3}
   TransparencyMaterial: {fileID: 2100000, guid: 3e1d5698278279344807101d9eade683, type: 2}
 --- !u!4 &855216313

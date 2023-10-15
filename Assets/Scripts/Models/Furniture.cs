@@ -258,15 +258,35 @@ public class Furniture : IXmlSerializable, ISelectableInterface
     // This will be replaced by validation checks fed to use fro lua files
     // that will be customizable for each of piece of furniture.
     // For ex. a dor might be specific that it needs two walls to connect to.
+
     protected bool DEFAULT__IsValidPosition(Tile t)
     {
+        List<TileType> allowedTileTypes = new List<TileType>
+    {
+        TileType.Grass,
+        TileType.Stone_Panel,
+        TileType.Wood_Panel,
+        TileType.Concrete_Slab,
+        TileType.Concrete_Slab2,
+        TileType.Clean_Concrete_Slab,
+        TileType.Cracked_Slab,
+        TileType.Road1,
+        TileType.Road2,
+        TileType.Road3,
+        TileType.Road4,
+        TileType.Road5,
+
+
+        // Add more allowed tile types as needed
+    };
+
         for (int x_off = t.X; x_off < (t.X + Width); x_off++)
         {
             for (int z_off = t.Z; z_off < (t.Z + Height); z_off++)
             {
                 Tile t2 = World.current.GetTileAt(x_off, z_off);
 
-                if (t2.Type != TileType.Grass)
+                if (!allowedTileTypes.Contains(t2.Type))
                 {
                     return false;
                 }
@@ -278,8 +298,6 @@ public class Furniture : IXmlSerializable, ISelectableInterface
                 }
             }
         }
-
-     
 
         return true; // Or whatever logic you need here
     }

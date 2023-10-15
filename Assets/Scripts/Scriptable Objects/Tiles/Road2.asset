@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dcfabfb096db58e46bd996f83a7fd233, type: 3}
-  m_Name: Concrete Slab
+  m_Name: Road2
   m_EditorClassIdentifier: 
-  Name: Concrete Slab
-  FileName: Concrete_Slab
+  Name: Road2
+  FileName: Road2
   Description: 
-  Type: 2
+  Type: 9

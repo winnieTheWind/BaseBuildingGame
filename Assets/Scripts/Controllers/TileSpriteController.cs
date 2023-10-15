@@ -83,6 +83,22 @@ public class TileSpriteController : MonoBehaviour
         LoadSprite(tile_go, tile_data, TileType.Stone_Panel);
         LoadSprite(tile_go, tile_data, TileType.Grass);
         LoadSprite(tile_go, tile_data, TileType.Concrete_Slab);
+        LoadSprite(tile_go, tile_data, TileType.Concrete_Slab2);
+        LoadSprite(tile_go, tile_data, TileType.Clean_Concrete_Slab);
+        LoadSprite(tile_go, tile_data, TileType.Cracked_Slab);
+        LoadSprite(tile_go, tile_data, TileType.Road1);
+        LoadSprite(tile_go, tile_data, TileType.Road2);
+        LoadSprite(tile_go, tile_data, TileType.Road3);
+        LoadSprite(tile_go, tile_data, TileType.Road4);
+        LoadSprite(tile_go, tile_data, TileType.Road5);
+
+
+
+
+
+
+
+
     }
 
     private void LoadSprite(GameObject tile_go, Tile tile_data, TileType type)

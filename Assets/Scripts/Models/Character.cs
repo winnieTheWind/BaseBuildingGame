@@ -89,7 +89,7 @@ public class Character : IXmlSerializable, ISelectableInterface
     Path_AStar pathAStar;
     float movementPercentage; // Goes from 0 to 1 as we move from currTile to destTile
 
-    float speed = 5f;   // Tiles per second
+    float speed = 2f;   // Tiles per second
 
     Action<Character> cbCharacterChanged;
 
@@ -511,6 +511,7 @@ public class Character : IXmlSerializable, ISelectableInterface
         cbCharacterChanged -= cb;
     }
 
+
     public bool IsValidPosition(Tile t)
     {
         return funcPositionValidation(t);
@@ -529,7 +530,7 @@ public class Character : IXmlSerializable, ISelectableInterface
             {
                 Tile t2 = World.current.GetTileAt(x_off, z_off);
 
-                if (t2.Type != TileType.Grass)
+                if (t2.Type != TileType.Empty)
                 {
                     return false;
                 }

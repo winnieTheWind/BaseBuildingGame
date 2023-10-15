@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dcfabfb096db58e46bd996f83a7fd233, type: 3}
-  m_Name: Stone Panel
+  m_Name: Stone_Panel
   m_EditorClassIdentifier: 
-  Name: Stone Panel
+  Name: Stone_Panel
   FileName: Stone_Panel
   Description: 
   Type: 3
