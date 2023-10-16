@@ -75,7 +75,7 @@ public class Job
         this.tile = other.tile;
         this.jobObjectType = other.jobObjectType;
         this.cbJobCompleted = other.cbJobCompleted;
-        this.jobTime = other.jobTime;
+        //this.jobTime = other.jobTime;
 
         cbJobWorkedLua = new List<string>(other.cbJobWorkedLua);
         cbJobCompletedLua = new List<string>(other.cbJobWorkedLua);
@@ -176,7 +176,7 @@ public class Job
             return;
         }
 
-        jobTime -= workTime;
+        //jobTime -= workTime;
 
         if (cbJobWorked != null)
             cbJobWorked(this);
@@ -189,8 +189,8 @@ public class Job
             }
         }
 
-        if (jobTime <= 0)
-        {
+        //if (jobTime <= 0)
+        //{
             // Do whatever is supposed to happen with a job cycle completes.
             if (cbJobCompleted != null)
                 cbJobCompleted(this);
@@ -209,15 +209,17 @@ public class Job
             else
             {
                 // This is a repeating job and must be reset.
-                jobTime += jobTimeRequired;
+                //jobTime += jobTimeRequired;
             }
-        }
+        //z}
     }
 
     public void CancelJob()
     {
         if (cbJobStopped != null)
+        {
             cbJobStopped(this);
+        }
 
         World.current.jobQueue.Remove(this);
     }

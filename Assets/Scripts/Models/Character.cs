@@ -6,6 +6,7 @@ using System.Xml.Schema;
 using System.Xml.Serialization;
 using System.Collections.Generic;
 using MoonSharp.Interpreter;
+using System.Text;
 
 public enum CharacterType
 {
@@ -89,7 +90,9 @@ public class Character : IXmlSerializable, ISelectableInterface
     Path_AStar pathAStar;
     float movementPercentage; // Goes from 0 to 1 as we move from currTile to destTile
 
-    float speed = 2f;   // Tiles per second
+    Path_ChunkPath path_ChunkPath;
+
+    float speed = 5f;   // Tiles per second
 
     Action<Character> cbCharacterChanged;
 
@@ -173,6 +176,7 @@ public class Character : IXmlSerializable, ISelectableInterface
         // requiring materials), but we still need to verify that the
         // final location can be reached.
 
+        // COMMENTING OUT FOR TESTING PURPOSES
         pathAStar = new Path_AStar(World.current, currTile, DestTile);  // This will calculate a path from curr to dest.
         if (pathAStar.Length() == 0)
         {
@@ -180,23 +184,23 @@ public class Character : IXmlSerializable, ISelectableInterface
             AbandonJob();
             DestTile = currTile;
         }
+
+
     }
 
-    float jobSearchCooldown = 0;
-
-
+    //float jobSearchCooldown = 0;
 
     void Update_DoJob(float deltaTime)
     {
         // Do I have a job?
-        jobSearchCooldown -= Time.deltaTime;
+        //obSearchCooldown -= Time.deltaTime;
         if (myJob == null)
         {
-            if (jobSearchCooldown > 0)
-            {
-                // Don't look for job now.
-                return;
-            }
+            //if (jobSearchCooldown > 0)
+            //{
+            //    // Don't look for job now.
+            //    return;
+            //}
 
 
             GetNewJob();
@@ -204,7 +208,7 @@ public class Character : IXmlSerializable, ISelectableInterface
             if (myJob == null)
             {
                 // There was no job on the queue for us, so just return.
-                jobSearchCooldown = UnityEngine.Random.Range(0.1f, 0.5f);
+                //jobSearchCooldown = UnityEngine.Random.Range(0.1f, 0.5f);
                 DestTile = currTile;
                 return;
             }
@@ -228,6 +232,7 @@ public class Character : IXmlSerializable, ISelectableInterface
                     {
                         // We are at the job's site, so drop the inventory
                         World.current.inventoryManager.PlaceInventory(myJob, inventory);
+                        myJob.tile.inventory.IsInStockpile = true;
                         myJob.DoWork(0); // This will call all cbJobWorked callbacks, because even though
                                          // we aren't progressing, it might want to do something with the fact
                                          // that the requirements are being met.
@@ -287,6 +292,7 @@ public class Character : IXmlSerializable, ISelectableInterface
                 else
                 {
                     // Walk towards a tile containing the required goods.
+                    //Debug.Log("Update_DoJob -- currTile.inventory != null ETC");
 
                     // Find the first thing in the Job that isn't satisfied.
                     Inventory desired = myJob.GetFirstDesiredInventory();
@@ -311,6 +317,19 @@ public class Character : IXmlSerializable, ISelectableInterface
                             desired.maxStackSize - desired.stackSize,
                             myJob.canTakeFromStockpile
                         );
+
+                        if (newPath == null)
+                        {
+                            //Debug.Log("pathAStar is null and we have no path to object of type: " + desired.objectType);
+                            // Cancel the job, since we have no way to get any raw materials!
+                            AbandonJob();
+                            return;
+                        }
+
+
+
+                        ////Path_ChunkPath path_ChunkPath = new Path_ChunkPath();
+                        ////path_ChunkPath.FindPath(currTile.chunk, DestTile.chunk);
 
                         if (newPath == null)
                         {
@@ -414,13 +433,10 @@ public class Character : IXmlSerializable, ISelectableInterface
             }
         }
 
-        //if(pathAStar.Length() == 0) {
-        //    return;
-        //}
-
-        // Chatgpt, this is where I can stop the player at the second to last tile, before the initial
-        // destination tile. However... CON
-
+        /*		if(pathAStar.Length() == 1) {
+                    return;
+                }
+        */
         // At this point we should have a valid nextTile to move to.
 
         // What's the total distance from point A to point B?
@@ -439,7 +455,7 @@ public class Character : IXmlSerializable, ISelectableInterface
             //		  so that we don't waste a bunch of time walking towards a dead end.
             //		  To save CPU, maybe we can only check every so often?
             //		  Or maybe we should register a callback to the OnTileChanged event?
-            //Debug.LogError("FIXME: A character was trying to enter an unwalkable tile.");
+            Debug.LogError("FIXME: A character was trying to enter an unwalkable tile.");
             nextTile = null;    // our next tile is a no-go
             pathAStar = null;   // clearly our pathfinding info is out of date.
             return;
@@ -477,6 +493,7 @@ public class Character : IXmlSerializable, ISelectableInterface
 
 
     }
+
 
     public void Update(float deltaTime)
     {
@@ -540,6 +557,9 @@ public class Character : IXmlSerializable, ISelectableInterface
                 {
                     return false;
                 }
+
+
+
             }
         }
 

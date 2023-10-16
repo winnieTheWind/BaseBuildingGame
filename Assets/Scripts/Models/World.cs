@@ -24,14 +24,6 @@ public class World : IXmlSerializable
     // that non-developers dont have access to that mode..
     // Future modes? (FREE_BUILD maybe?)
 
-    public enum UserState
-    {
-        FREE_EDIT,
-        CUTSCENE,
-        GAME
-    }
-
-    public UserState currentUserState;
 
         // A two-dimensional array to hold our tile data.
         Tile[,] tiles;
@@ -42,6 +34,9 @@ public class World : IXmlSerializable
 
     // The pathfinding graph used to navigate our world map.
     public Path_TileGraph tileGraph;
+
+    // The manager that handles chunks of the map
+    public TilemapChunkManager tilemapChunkManager;
 
     public Dictionary<string, Furniture> furniturePrototypes;
     public Dictionary<string, Job> furnitureJobPrototypes;
@@ -65,6 +60,15 @@ public class World : IXmlSerializable
     public JobQueue jobQueue;
 
     static public World current { get; protected set; }
+
+    public enum UserState
+    {
+        FREE_EDIT,
+        CUTSCENE,
+        GAME
+    }
+
+    public UserState currentUserState;
 
     public World(int width, int height)
     {
@@ -132,16 +136,45 @@ public class World : IXmlSerializable
         rooms = new List<Room>();
         rooms.Add(new Room()); // Create the outside?
 
+        tilemapChunkManager = new TilemapChunkManager(Width, Height, 2, 2);
+
+
         for (int x = 0; x < Width; x++)
         {
             for (int z = 0; z < Height; z++)
             {
-                tiles[x, z] = new Tile(x, z);
+                tiles[x, z] = new Tile(x, z, Color.white);
                 tiles[x, z].RegisterTileTypeChangedCallback(OnTileChanged);
                 tiles[x, z].room = GetOutsideRoom(); // Rooms 0 is always going to be outside, and that is our default room
+
+                Tile tile = tiles[x, z];
+
+                // Calculate which chunk this tile belongs to
+                int chunkColumn = x / tilemapChunkManager.ChunkWidth;
+                int chunkRow = z / tilemapChunkManager.ChunkHeight;
+
+                // Get the corresponding chunk from the manager and add the tile to it
+                Chunk chunk = tilemapChunkManager.GetChunk(chunkColumn, chunkRow);
+                if (chunk != null)
+                {
+                    chunk.AddTile(tile);
+                    tile.chunk = chunk;
+                }
+                else
+                {
+                    Debug.LogError("SetupWorld: No chunk available for the calculated position");
+                }
             }
         }
 
+        Debug.Log("GenerateChunks -- TileCount for one chunk -- " + tilemapChunkManager.Chunks[0].tiles.Count);
+
+        tilemapChunkManager.Chunks[0].ChangeTilesColor(Color.red);
+        tilemapChunkManager.Chunks[1].ChangeTilesColor(Color.blue);
+        tilemapChunkManager.Chunks[2].ChangeTilesColor(Color.cyan);
+        tilemapChunkManager.Chunks[3].ChangeTilesColor(Color.magenta);
+
+        // Initialize TilemapChunkManager
         //Debug.Log("World created with " + (Width * Height) + " tiles.");
 
         CreateFurniturePrototypes();
@@ -152,6 +185,8 @@ public class World : IXmlSerializable
         inventoryManager = new InventoryManager();
 
     }
+
+    // So how would I add the correct amount of tiles to a h
 
     public void Update(float deltaTime)
     {

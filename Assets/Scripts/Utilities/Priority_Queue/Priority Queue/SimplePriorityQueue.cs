@@ -193,6 +193,41 @@ namespace Priority_Queue
             }
         }
 
+        public bool IsEmpty()
+        {
+            lock (_queue)
+            {
+                return _queue.Count == 0;
+            }
+        }
+
+        public SimplePriorityQueue<T> Reverse()
+        {
+            SimplePriorityQueue<T> reversedQueue = new SimplePriorityQueue<T>();
+
+            lock (_queue)
+            {
+                // Create a list to hold items and their priorities
+                var itemsWithPriorities = new List<(T item, double priority)>();
+
+                // Dequeue items from the current queue and store them with their current priorities
+                while (_queue.Count > 0)
+                {
+                    var node = _queue.Dequeue();
+                    itemsWithPriorities.Add((node.Data, node.Priority)); // Assuming the node's priority can be accessed here
+                }
+
+                // Enqueue items into the new queue with their priorities negated
+                foreach (var (item, priority) in itemsWithPriorities)
+                {
+                    reversedQueue.Enqueue(item, -priority); // Negating the priority
+                }
+            }
+
+            return reversedQueue;
+        }
+
+
         public IEnumerator<T> GetEnumerator()
         {
             List<T> queueData = new List<T>();

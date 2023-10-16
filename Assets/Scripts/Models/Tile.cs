@@ -64,11 +64,22 @@ public class Tile : IXmlSerializable, ISelectableInterface
 
     Action<Tile> cbTileChanged;
 
-    public Tile(int x, int z) 
+    public Color TileColor { get; set; }
+
+    public Chunk chunk { get; set; }
+
+    public Tile(int x, int z, Color color) 
     {
         this.X = x;
         this.Z = z;
+        this.TileColor = color;
         characters = new List<Character>();
+    }
+
+    // You can also have a method to change the color of the tile.
+    public void ChangeColor(Color newColor)
+    {
+        TileColor = newColor;
     }
 
     public void RegisterTileTypeChangedCallback(Action<Tile> callback)

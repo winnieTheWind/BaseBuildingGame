@@ -27,6 +27,8 @@ public class Furniture : IXmlSerializable, ISelectableInterface
     // If the job causes some kind of object to be spawned where will it appear?
     public Vector3 jobSpawnSpotOffset = Vector3.zero;
 
+    public bool hasAddedJob = false;
+
     public void Update(float deltaTime)
     {
         if (updateActions != null)
@@ -286,6 +288,8 @@ public class Furniture : IXmlSerializable, ISelectableInterface
             {
                 Tile t2 = World.current.GetTileAt(x_off, z_off);
 
+                // Make sure tile doesnt already have furniture
+
                 if (!allowedTileTypes.Contains(t2.Type))
                 {
                     return false;
@@ -502,10 +506,10 @@ public class Furniture : IXmlSerializable, ISelectableInterface
 
     public void AddJob(Job j)
     {
-        j.furniture = this;
-        jobs.Add(j);
-        j.RegisterJobStoppedCallback(OnJobStopped);
-        World.current.jobQueue.Enqueue(j);
+            j.furniture = this;
+            jobs.Add(j);
+            j.RegisterJobStoppedCallback(OnJobStopped);
+            World.current.jobQueue.Enqueue(j);
     }
 
     void OnJobStopped(Job j)

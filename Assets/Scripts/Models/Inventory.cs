@@ -32,6 +32,8 @@ public class Inventory : ISelectableInterface
         }
     }
 
+    public bool IsInStockpile = false;
+
     // The function we callback any time our tile's data changes
     Action<Inventory> cbInventoryChanged;
 

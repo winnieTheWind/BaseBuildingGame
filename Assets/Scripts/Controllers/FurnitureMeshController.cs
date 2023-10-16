@@ -77,7 +77,6 @@ public class FurnitureMeshController : MonoBehaviour
             // Get MeshRenderer component to the GameObject
             MeshRenderer meshRenderer = furn_go.GetComponent<MeshRenderer>();
             meshRenderer.sortingLayerName = "Furniture";
-
             // Optionally, you might want to set the material of the MeshRenderer
             meshRenderer.material = WallMaterial;
 

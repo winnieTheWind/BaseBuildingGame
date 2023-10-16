@@ -44,6 +44,7 @@ public class TileSpriteController : MonoBehaviour
                 // Add a sprite renderer
                 SpriteRenderer sr = tile_go.AddComponent<SpriteRenderer>();
                 sr.material = TileMaterial;
+                sr.material.color = tile_data.TileColor;
 
                 Sprite spr = SpriteManager.current.GetSprite("Tiles", "Empty");
 
@@ -108,6 +109,8 @@ public class TileSpriteController : MonoBehaviour
             tile_go.GetComponent<SpriteRenderer>().material = TileMaterial;
             tile_go.GetComponent<SpriteRenderer>().sprite = SpriteManager.current.GetSprite("Tiles", type.ToString());
             tile_go.transform.localScale = new Vector3(2, 2, 2);
+            SpriteRenderer sr = tile_go.GetComponent<SpriteRenderer>();
+            sr.material.color = tile_data.TileColor;
         }
 
     }

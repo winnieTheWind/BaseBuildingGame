@@ -23,6 +23,9 @@ public class MouseController : MonoBehaviour
     BuildModeController bmc;
     FurnitureMeshController fmc;
 
+    public Camera OverlayCamera;
+
+
     bool isDragging = false;
 
     public Material TransparencyMaterial;
@@ -434,6 +437,7 @@ public class MouseController : MonoBehaviour
             pan = panAction.ReadValue<Vector2>();
             Vector3 panMovement = new Vector3(-pan.x, 0, -pan.y) * Time.deltaTime * panSpeed;
             Camera.main.transform.position += panMovement;
+            OverlayCamera.transform.position += panMovement;
         }
 
         // Update lastFramePosition here for more accurate movement

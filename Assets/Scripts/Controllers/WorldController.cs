@@ -95,7 +95,7 @@ public class WorldController : MonoBehaviour
     void CreateEmptyWorld()
     {
         // Create a world with Empty tiles
-        world = new World(100, 100);
+        world = new World(10, 10);
 
     }
 
