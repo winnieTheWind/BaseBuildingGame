@@ -12,6 +12,8 @@ public class UserModeButton : MonoBehaviour
     private void Start()
     {
         world = WorldController.Instance.world;
+        UpdateGameStateText(); // Update the UI text after changing the game state
+
     }
 
     public void ToggleGameState()

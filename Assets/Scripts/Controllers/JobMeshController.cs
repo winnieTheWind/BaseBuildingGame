@@ -60,6 +60,7 @@ public class JobMeshController : MonoBehaviour
 
             job_go.name = "JOB_" + job.jobObjectType + "_" + job.tile.X + "_" + job.tile.Z;
             job_go.transform.position = new Vector3(job.tile.X + ((job.furniturePrototype.Width) / 2f), 0, job.tile.Z + ((job.furniturePrototype.Height) / 2f));
+
             job_go.transform.SetParent(this.transform, true);
 
             // Get MeshRenderer component to the GameObject
@@ -98,7 +99,7 @@ public class JobMeshController : MonoBehaviour
             job_go.name = "JOB_" + job.jobObjectType + "_" + job.tile.X + "_" + job.tile.Z;
             //go.transform.position = new Vector3(t.X + ((proto.Width) / 2f), 0, t.Z + ((proto.Height) / 2f));
 
-            job_go.transform.position = new Vector3(job.tile.X + ((job.furniturePrototype.Width - 1) / 2f), 0, job.tile.Z + ((job.furniturePrototype.Height - 1) / 2f));
+            job_go.transform.position = new Vector3(job.tile.X + ((job.furniturePrototype.Width) / 2f), 0, job.tile.Z + ((job.furniturePrototype.Height) / 2f));
             job_go.transform.SetParent(this.transform, true);
             job_go.transform.rotation = Quaternion.Euler(90, 0, 0);
         
@@ -110,6 +111,7 @@ public class JobMeshController : MonoBehaviour
 
         job.RegisterJobCompletedCallback(OnJobEnded);
         job.RegisterJobStoppedCallback(OnJobEnded);
+
     }
 
     void OnJobEnded(Job job)

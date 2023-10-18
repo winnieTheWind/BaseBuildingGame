@@ -54,6 +54,7 @@ public class BuildModeController : MonoBehaviour
     {
         WorldController.Instance.world.SetupPathfindingExample();
 
+
     }
 
     public void SetMode_BuildFloor(TileType type)

@@ -43,7 +43,7 @@ public class CharacterSpriteController : MonoBehaviour
         characterGameObjectMap.Add(character, char_go);
 
         char_go.name = "Character";
-        char_go.transform.position = new Vector3(character.currTile.X, 0.904f, character.currTile.Z);
+        char_go.transform.position = new Vector3(character.currTile.X + 0.5f, 0.904f, character.currTile.Z + 0.5f);
         char_go.transform.rotation = Quaternion.Euler(0, 0, 0);
         char_go.transform.localScale = new Vector3(1, 1, 1);
         char_go.transform.SetParent(this.transform, true);
@@ -77,7 +77,8 @@ public class CharacterSpriteController : MonoBehaviour
         //char_go.transform.Rotate(0, 180, 0);
 
         char_go.transform.localScale = new Vector3(1, 1, 1);
-        char_go.transform.position = new Vector3(c.X, 0.904f, c.Z);
+        char_go.transform.position = new Vector3(c.X + 0.5f, 0.904f, c.Z + 0.5f);
+
 
         // Set character type based on your logic
         c.Type = CharacterType.ConstructionWorker; // For example

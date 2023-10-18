@@ -32,11 +32,11 @@ public class World : IXmlSerializable
     public List<Room> rooms;
     public InventoryManager inventoryManager;
 
-    // The pathfinding graph used to navigate our world map.
-    public Path_TileGraph tileGraph;
-
     // The manager that handles chunks of the map
     public TilemapChunkManager tilemapChunkManager;
+
+    // The pathfinding graph used to navigate our world map.
+    public Path_TileGraph tileGraph;
 
     public Dictionary<string, Furniture> furniturePrototypes;
     public Dictionary<string, Job> furnitureJobPrototypes;
@@ -52,7 +52,6 @@ public class World : IXmlSerializable
     Action<Character> cbCharacterCreated;
     Action<Inventory> cbInventoryCreated;
     Action<Tile> cbTileChanged;
-
     // TODO: Most likely this will be replaced with a dedicated
     // class for managing job queues (plural!) that might also
     // be semi-static or self initializing or some damn thing.
@@ -75,7 +74,7 @@ public class World : IXmlSerializable
         // Creates an empty world.
         SetupWorld(width, height);
 
-        currentUserState = UserState.FREE_EDIT;
+        currentUserState = UserState.GAME;
     }
 
     public World() {}
@@ -136,8 +135,7 @@ public class World : IXmlSerializable
         rooms = new List<Room>();
         rooms.Add(new Room()); // Create the outside?
 
-        tilemapChunkManager = new TilemapChunkManager(Width, Height, 2, 2);
-
+        tilemapChunkManager = new TilemapChunkManager(Width, Height, 4, 4);
 
         for (int x = 0; x < Width; x++)
         {
@@ -149,12 +147,13 @@ public class World : IXmlSerializable
 
                 Tile tile = tiles[x, z];
 
-                // Calculate which chunk this tile belongs to
+                //// Calculate which chunk this tile belongs to
                 int chunkColumn = x / tilemapChunkManager.ChunkWidth;
                 int chunkRow = z / tilemapChunkManager.ChunkHeight;
 
-                // Get the corresponding chunk from the manager and add the tile to it
-                Chunk chunk = tilemapChunkManager.GetChunk(chunkColumn, chunkRow);
+                //// Get the corresponding chunk from the manager and add the tile to it
+                Chunk chunk = tilemapChunkManager.GetChunkAtGridPosition(chunkColumn, chunkRow); // This is correct.
+
                 if (chunk != null)
                 {
                     chunk.AddTile(tile);
@@ -167,15 +166,12 @@ public class World : IXmlSerializable
             }
         }
 
-        Debug.Log("GenerateChunks -- TileCount for one chunk -- " + tilemapChunkManager.Chunks[0].tiles.Count);
-
-        tilemapChunkManager.Chunks[0].ChangeTilesColor(Color.red);
-        tilemapChunkManager.Chunks[1].ChangeTilesColor(Color.blue);
-        tilemapChunkManager.Chunks[2].ChangeTilesColor(Color.cyan);
-        tilemapChunkManager.Chunks[3].ChangeTilesColor(Color.magenta);
-
-        // Initialize TilemapChunkManager
-        //Debug.Log("World created with " + (Width * Height) + " tiles.");
+        //Debug.Log("GenerateChunks -- TileCount for one chunk -- " + tilemapChunkManager.Chunks[0].tiles.Count);
+        //Color[] colors = new Color[] { Color.red, Color.blue, Color.green, Color.cyan, Color.grey, Color.yellow };
+        //foreach (var item in tilemapChunkManager.Chunks)
+        //{
+        //    item.ChangeTilesColor(colors[UnityEngine.Random.Range(0, colors.Length)]);
+        //}
 
         CreateFurniturePrototypes();
         CreateCharacterPrototypes();
@@ -183,10 +179,7 @@ public class World : IXmlSerializable
         characters = new List<Character>();
         furnitures = new List<Furniture>();
         inventoryManager = new InventoryManager();
-
     }
-
-    // So how would I add the correct amount of tiles to a h
 
     public void Update(float deltaTime)
     {
@@ -601,6 +594,7 @@ public class World : IXmlSerializable
         
 
         InvalidateTileGraph();
+
     }
 
     // This should be called whenever a change to the world
@@ -609,6 +603,7 @@ public class World : IXmlSerializable
     {
         tileGraph = null;
     }
+
 
     public bool IsFurniturePlacementValid(string furnitureType, Tile t)
     {

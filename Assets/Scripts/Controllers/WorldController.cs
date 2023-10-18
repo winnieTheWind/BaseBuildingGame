@@ -74,6 +74,8 @@ public class WorldController : MonoBehaviour
         Debug.Log("NewWorld button was clicked.");
 
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+
+
     }
 
     public string FileSaveBasePath()
@@ -95,7 +97,7 @@ public class WorldController : MonoBehaviour
     void CreateEmptyWorld()
     {
         // Create a world with Empty tiles
-        world = new World(10, 10);
+        world = new World(20, 20);
 
     }
 

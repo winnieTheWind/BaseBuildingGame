@@ -62,7 +62,7 @@ public class Tile : IXmlSerializable, ISelectableInterface
         }
     }
 
-    Action<Tile> cbTileChanged;
+    public Action<Tile> cbTileChanged;
 
     public Color TileColor { get; set; }
 
@@ -76,11 +76,37 @@ public class Tile : IXmlSerializable, ISelectableInterface
         characters = new List<Character>();
     }
 
-    // You can also have a method to change the color of the tile.
     public void ChangeColor(Color newColor)
     {
-        TileColor = newColor;
+        // Notify any listeners that this tile has changed.
+        // ... rest of your method
+        if (TileColor != newColor) // Check if the new color is different to avoid unnecessary updates
+        {
+            TileColor = newColor;
+            // Inform the registered listeners that this tile has changed
+            cbTileChanged?.Invoke(this); // This checks if the callback is not null before invoking
+        }
+
     }
+
+    public void RegisterTileChanged(Action<Tile> callbackfunc)
+    {
+        cbTileChanged += callbackfunc;
+    }
+
+    public void UnregisterTileChanged(Action<Tile> callbackfunc)
+    {
+        cbTileChanged -= callbackfunc;
+    }
+    //public void ChangeColor(Color newColor)
+    //{
+    //    if (TileColor != newColor) // Check if the new color is different to avoid unnecessary updates
+    //    {
+    //        TileColor = newColor;
+
+    //        // Inform the registered listeners that this tile has changed
+    //    }
+    //}
 
     public void RegisterTileTypeChangedCallback(Action<Tile> callback)
     {

@@ -11,13 +11,22 @@ public class Chunk
     public float CenterX { get; }
     public float CenterZ { get; }
 
+    public Vector3 CenterPosition { get; set; }
     // List to hold the tiles in this chunk.
     public List<Tile> tiles;
 
+    public float movementCost = 1;
+
     private List<Inventory> inventoryItems;
 
-    public Chunk(int startX, int startZ, int width, int height, float centerX, float centerZ)
+    TilemapChunkManager tilemapChunkManager;
+
+    public List<Character> characters;
+
+
+    public Chunk(TilemapChunkManager tcm, int startX, int startZ, int width, int height, float centerX, float centerZ)
     {
+        tilemapChunkManager = tcm;
         // Initialization...
         StartX = startX;
         StartZ = startZ;
@@ -25,8 +34,12 @@ public class Chunk
         Height = height;
         CenterX = centerX;
         CenterZ = centerZ;
+        CenterPosition = new Vector3(CenterX, 0, CenterZ);
+
+
 
         tiles = new List<Tile>();
+        characters = new List<Character>();
     }
 
     // Add a tile to the chunk.
@@ -43,61 +56,35 @@ public class Chunk
             tile.ChangeColor(newColor); // Calls the ChangeColor method on your Tile class.
         }
     }
-
-
-    // ... other parts of your Chunk class ...
-
-    /// <summary>
-    /// Checks if the chunk has enough inventory of the specified type.
-    /// </summary>
-    /// <param name="objectType">Type of inventory object.</param>
-    /// <param name="desiredAmount">The amount of inventory needed.</param>
-    /// <param name="canTakeFromStockpile">If true, inventory can be taken from stockpiles.</param>
-    /// <returns>True if enough inventory is available, false otherwise.</returns>
-    public bool HasEnoughInventory(string objectType, int desiredAmount, bool canTakeFromStockpile)
+    public Chunk[] GetNeighbors()
     {
-        // Check if the dictionary has the item type
-        if (!World.current.inventoryManager.inventories.ContainsKey(objectType))
+        List<Chunk> neighbors = new List<Chunk>();
+
+        // These are the four directions: up, down, left, and right.
+        (int, int)[] directions = new (int, int)[] { (0, 1), (0, -1), (-1, 0), (1, 0) };
+
+        int currentChunkGridX = StartX / tilemapChunkManager.ChunkWidth; // Assuming StartX is the world position.
+        int currentChunkGridZ = StartZ / tilemapChunkManager.ChunkHeight; // Assuming StartZ is the world position.
+
+        foreach (var (xOffset, zOffset) in directions)
         {
-            return false; // No items of this type
-        }
+            int neighborChunkGridX = currentChunkGridX + xOffset;
+            int neighborChunkGridZ = currentChunkGridZ + zOffset;
 
-        int totalAmount = 0;
-
-        // Access the list from the dictionary.
-        List<Inventory> inventoryList = World.current.inventoryManager.inventories[objectType];
-
-        // Go through the inventory items of the specified type.
-        foreach (Inventory item in inventoryList)
-        {
-            // Here we need to decide how we know if an item is in a stockpile or not.
-            // We're assuming that the 'Tile' class has a method or property 'IsStockpile' to check if it's a stockpile.
-
-            bool isInStockpile = item.tile != null && item.IsInStockpile; // Hypothetical check based on your game's logic
-
-            if (canTakeFromStockpile || !isInStockpile)
+            // Validate the calculated grid position before attempting to access the chunk.
+            if (neighborChunkGridX >= 0 && neighborChunkGridX < tilemapChunkManager.ChunkColumns &&
+                neighborChunkGridZ >= 0 && neighborChunkGridZ < tilemapChunkManager.ChunkRows)
             {
-                totalAmount += item.stackSize; // Or whatever property holds the quantity.
+                Chunk neighbor = tilemapChunkManager.GetChunkAtGridPosition(neighborChunkGridX, neighborChunkGridZ);
+                if (neighbor != null) neighbors.Add(neighbor);
             }
         }
 
-        // Check if we have enough inventory.
-        return totalAmount >= desiredAmount;
+        return neighbors.ToArray();
     }
 
 
 
-    // This is a stand-in for whatever method you have that checks stockpile amounts.
-    private int GetAmountInStockpile(string objectType)
-    {
-        int amountInStockpile = 0;
-        // Logic to determine how much of the objectType is in stockpiles.
-        // This could involve checking a property of your inventory items, or a separate collection
-        // that tracks stockpile amounts, etc.
-        // ...
-
-        return amountInStockpile;
-    }
-
-    // Other methods and properties...
 }
+
+// Heres the chunk class. cAN YOU rewrite the ChunkPathfinder class to make sure it can connect to this class.

@@ -18,6 +18,10 @@ public class TilemapChunkManager
 
     static public TilemapChunkManager current { get; protected set; }
 
+    public ChunkDebugger ChunkDebugger { get; set; }
+
+    private int index = 0;
+
     public TilemapChunkManager(int totalWidth, int totalHeight, int chunkRows, int chunkColumns)
     {
         // Set the current TileChunkManager to be this TileChunkManager.
@@ -47,32 +51,38 @@ public class TilemapChunkManager
                 int startX = j * ChunkWidth;
                 int startZ = i * ChunkHeight;
 
-                // Calculate the center of the chunk
-                float centerX = startX + (ChunkWidth / 2.0f);
-                float centerZ = startZ + (ChunkHeight / 2.0f);
+                // Calculate the center of the chunk. Make sure to cast to float to avoid integer division.
+                float centerX = startX + (float)ChunkWidth / 2.0f;
+                float centerZ = startZ + (float)ChunkHeight / 2.0f;
 
                 // Here, you could create a new chunk object with its boundaries and center point.
-                Chunk newChunk = new Chunk(startX, startZ, ChunkWidth, ChunkHeight, centerX, centerZ);
+                Chunk newChunk = new Chunk(this, startX, startZ, ChunkWidth, ChunkHeight, centerX, centerZ);
                 Chunks.Add(newChunk);
             }
         }
-      
-
-        //Chunks[0].ChangeTilesColor(Color.red);
-
     }
 
-    // Method to get a chunk by its position in the chunk grid
-    public Chunk GetChunk(int chunkColumn, int chunkRow)
+    // Okay the way I'm calculating startX and Z is correct.
+    // But the center is wrong. Each chunk is 5 in width and 5 in height. Each time i log centerX and Z, I get ints instead of floats..
+    // because if you divide 5 you should get 2.5. Instead I get 2, which is wrong.
+
+    public Chunk GetChunkAtGridPosition(int gridX, int gridZ)
     {
-        // This assumes chunks are stored row by row. Adjust if your Chunks list is organized differently.
-        int index = chunkRow * ChunkColumns + chunkColumn;
+        // Here, you need to translate from grid coordinates (gridX, gridZ) to your chunk list index.
+        // This translation depends on how you're storing your chunks (e.g., row-major, column-major).
+
+        // For example, if you're storing in row-major order:
+        int index = gridZ * ChunkColumns + gridX; // Calculate index based on grid position.
+
+        // Check if the index is within the bounds of the list.
         if (index >= 0 && index < Chunks.Count)
         {
             return Chunks[index];
         }
-        Debug.LogError("GetChunk: Invalid chunk position");
-        return null;
+        else
+        {
+            return null; // Out of bounds.
+        }
     }
 
     public List<Chunk> GetAllChunks()
@@ -81,4 +91,7 @@ public class TilemapChunkManager
     }
 }
 
-// i'M TRYing to set one chunk of tiles to red.
+// There might something wrong with this code.
+// If I select a tile in chunk x 1 z 2 or is it 3 not sure..
+// it will then print out a console log showing that its 
+// constructed a path betw
