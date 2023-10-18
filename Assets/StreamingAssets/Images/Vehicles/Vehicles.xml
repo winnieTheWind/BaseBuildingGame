@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Sprites>
+	<Sprite name="truckSprite" x="0" y="0" w="26" h="78" pixelPerUnit="16" scale="1.0" rotation="0" />
+</Sprites>

@@ -69,4 +69,9 @@ public class JobQueue
         jobs.Remove(j);
         jobQueue = new Queue<Job>(jobs);
     }
+
+    public int Length()
+    {
+        return jobQueue.Count;
+    }
 }

@@ -52,8 +52,12 @@
 	<Furniture objectType="Stockpile">
 		<Is3D>false</Is3D>
 		<Name>Stockpile</Name>
+		<Width>1</Width>
+		<Height>1</Height>
 		<MovementCost>1</MovementCost>
 		<LinksToNeighbours>true</LinksToNeighbours>
+		<EnclosesRooms>false</EnclosesRooms>
+
 
 		<OnUpdate FunctionName="Stockpile_UpdateAction" />
 	</Furniture>

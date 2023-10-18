@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
 using UnityEditor.Experimental.GraphView;
+using System;
 
 public enum BuildMode
 {
@@ -22,9 +23,14 @@ public class BuildModeController : MonoBehaviour
 
     FurnitureMeshController fmc;
 
+    public string TileFileName = "";
+
+    public static Action<BuildModeController> sendBuildModeController;
+
     private void Start()
     {
         fmc = GameObject.FindObjectOfType<FurnitureMeshController>();
+        sendBuildModeController?.Invoke(this);
     }
 
     public bool IsObjectDraggable()
@@ -48,6 +54,15 @@ public class BuildModeController : MonoBehaviour
     {
         WorldController.Instance.world.SetupPathfindingExample();
 
+
+    }
+
+    public void SetMode_BuildFloor(TileType type)
+    {
+        buildMode = BuildMode.FLOOR;
+        buildModeTile = type;
+
+        GameObject.FindObjectOfType<MouseController>().StartBuildMode();
     }
 
     public void SetMode_BuildFloor()
@@ -55,9 +70,7 @@ public class BuildModeController : MonoBehaviour
         buildMode = BuildMode.FLOOR;
         buildModeTile = TileType.Grass;
 
-
         GameObject.FindObjectOfType<MouseController>().StartBuildMode();
-
     }
 
     public void SetMode_RemoveFloor()

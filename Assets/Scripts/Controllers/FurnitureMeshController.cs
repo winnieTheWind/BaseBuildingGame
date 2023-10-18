@@ -77,7 +77,6 @@ public class FurnitureMeshController : MonoBehaviour
             // Get MeshRenderer component to the GameObject
             MeshRenderer meshRenderer = furn_go.GetComponent<MeshRenderer>();
             meshRenderer.sortingLayerName = "Furniture";
-
             // Optionally, you might want to set the material of the MeshRenderer
             meshRenderer.material = WallMaterial;
 
@@ -88,7 +87,7 @@ public class FurnitureMeshController : MonoBehaviour
             furnitureGameObjectMap.Add(furn, furn_go);
 
             furn_go.name = furn.objectType.ToString() + "_" + furn.tile.X + "_" + furn.tile.Z;
-            furn_go.transform.position = new Vector3(furn.tile.X + ((furn.Width - 1) / 2f), 0, furn.tile.Z + ((furn.Height - 1) / 2f));
+            furn_go.transform.position = new Vector3(furn.tile.X + ((furn.Width) / 2f), 0, furn.tile.Z + ((furn.Height) / 2f));
             furn_go.transform.rotation = Quaternion.Euler(90, 0, 0);
             furn_go.transform.SetParent(this.transform, true);
             //furn_go.GetComponentInChildren<SpriteRenderer>().sortingLayerName = "Furniture";
@@ -105,6 +104,7 @@ public class FurnitureMeshController : MonoBehaviour
         // the object's into changes.
         furn.RegisterOnChangedCallback(OnFurnitureChanged);
         furn.RegisterOnRemovedCallback(OnFurnitureRemoved);
+
 
 
     }
@@ -191,6 +191,7 @@ public class FurnitureMeshController : MonoBehaviour
 
             furn_go.GetComponent<SpriteRenderer>().sprite = GetSpriteForFurniture(furn);
             furn_go.GetComponent<SpriteRenderer>().color = furn.tint;
+            
             isUpdatingFurniture = false;
         }
     }

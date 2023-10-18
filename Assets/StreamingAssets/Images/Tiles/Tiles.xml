@@ -2,4 +2,16 @@
 <Sprites>
 	<Sprite name="Empty" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
 	<Sprite name="Grass" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Concrete_Slab" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Stone_Panel" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Wood_Panel" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Clean_Concrete_Slab" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Concrete_Slab2" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Cracked_Slab" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Road1" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Road2" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Road3" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Road4" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+	<Sprite name="Road5" x="0" y="0" w="16" h="16" pixelPerUnit="16" scale="1.0" rotation="0" />
+
 </Sprites>

@@ -9,6 +9,7 @@ public class MouseOverTileTypeText : MonoBehaviour
     // parameter of the object it is attached to.
 
     TextMeshProUGUI myText;
+
     MouseController mouseController;
 
     // Use this for initialization
@@ -38,7 +39,7 @@ public class MouseOverTileTypeText : MonoBehaviour
 
         if (t != null)
         {
-            myText.text = "Tile Type: " + t.Type.ToString();
+            myText.text = "Tile Type: " + t.Type.ToString() + " Chunk: " + t.chunk.CenterX + " " + t.chunk.CenterZ;
         } else
         {
             myText.text = "Tile Type: N/A";

@@ -24,14 +24,6 @@ public class World : IXmlSerializable
     // that non-developers dont have access to that mode..
     // Future modes? (FREE_BUILD maybe?)
 
-    public enum UserState
-    {
-        FREE_EDIT,
-        CUTSCENE,
-        GAME
-    }
-
-    public UserState currentUserState;
 
         // A two-dimensional array to hold our tile data.
         Tile[,] tiles;
@@ -39,6 +31,9 @@ public class World : IXmlSerializable
     public List<Furniture> furnitures;
     public List<Room> rooms;
     public InventoryManager inventoryManager;
+
+    // The manager that handles chunks of the map
+    public TilemapChunkManager tilemapChunkManager;
 
     // The pathfinding graph used to navigate our world map.
     public Path_TileGraph tileGraph;
@@ -57,7 +52,6 @@ public class World : IXmlSerializable
     Action<Character> cbCharacterCreated;
     Action<Inventory> cbInventoryCreated;
     Action<Tile> cbTileChanged;
-
     // TODO: Most likely this will be replaced with a dedicated
     // class for managing job queues (plural!) that might also
     // be semi-static or self initializing or some damn thing.
@@ -66,12 +60,21 @@ public class World : IXmlSerializable
 
     static public World current { get; protected set; }
 
+    public enum UserState
+    {
+        FREE_EDIT,
+        CUTSCENE,
+        GAME
+    }
+
+    public UserState currentUserState;
+
     public World(int width, int height)
     {
         // Creates an empty world.
         SetupWorld(width, height);
 
-        currentUserState = UserState.FREE_EDIT;
+        currentUserState = UserState.GAME;
     }
 
     public World() {}
@@ -132,17 +135,43 @@ public class World : IXmlSerializable
         rooms = new List<Room>();
         rooms.Add(new Room()); // Create the outside?
 
+        tilemapChunkManager = new TilemapChunkManager(Width, Height, 4, 4);
+
         for (int x = 0; x < Width; x++)
         {
             for (int z = 0; z < Height; z++)
             {
-                tiles[x, z] = new Tile(x, z);
+                tiles[x, z] = new Tile(x, z, Color.white);
                 tiles[x, z].RegisterTileTypeChangedCallback(OnTileChanged);
                 tiles[x, z].room = GetOutsideRoom(); // Rooms 0 is always going to be outside, and that is our default room
+
+                Tile tile = tiles[x, z];
+
+                //// Calculate which chunk this tile belongs to
+                int chunkColumn = x / tilemapChunkManager.ChunkWidth;
+                int chunkRow = z / tilemapChunkManager.ChunkHeight;
+
+                //// Get the corresponding chunk from the manager and add the tile to it
+                Chunk chunk = tilemapChunkManager.GetChunkAtGridPosition(chunkColumn, chunkRow); // This is correct.
+
+                if (chunk != null)
+                {
+                    chunk.AddTile(tile);
+                    tile.chunk = chunk;
+                }
+                else
+                {
+                    Debug.LogError("SetupWorld: No chunk available for the calculated position");
+                }
             }
         }
 
-        //Debug.Log("World created with " + (Width * Height) + " tiles.");
+        //Debug.Log("GenerateChunks -- TileCount for one chunk -- " + tilemapChunkManager.Chunks[0].tiles.Count);
+        //Color[] colors = new Color[] { Color.red, Color.blue, Color.green, Color.cyan, Color.grey, Color.yellow };
+        //foreach (var item in tilemapChunkManager.Chunks)
+        //{
+        //    item.ChangeTilesColor(colors[UnityEngine.Random.Range(0, colors.Length)]);
+        //}
 
         CreateFurniturePrototypes();
         CreateCharacterPrototypes();
@@ -150,7 +179,6 @@ public class World : IXmlSerializable
         characters = new List<Character>();
         furnitures = new List<Furniture>();
         inventoryManager = new InventoryManager();
-
     }
 
     public void Update(float deltaTime)
@@ -563,7 +591,10 @@ public class World : IXmlSerializable
 
         cbTileChanged(t);
 
+        
+
         InvalidateTileGraph();
+
     }
 
     // This should be called whenever a change to the world
@@ -572,6 +603,7 @@ public class World : IXmlSerializable
     {
         tileGraph = null;
     }
+
 
     public bool IsFurniturePlacementValid(string furnitureType, Tile t)
     {

@@ -23,6 +23,9 @@ public class MouseController : MonoBehaviour
     BuildModeController bmc;
     FurnitureMeshController fmc;
 
+    public Camera OverlayCamera;
+
+
     bool isDragging = false;
 
     public Material TransparencyMaterial;
@@ -226,7 +229,7 @@ public class MouseController : MonoBehaviour
                 // Object is on the InventoryUI sorting layer, ignore it
                 return;
             }
-            currFramePosition = new Vector3(currHit.point.x, currHit.point.y, currHit.point.z + 0.8f);
+            currFramePosition = new Vector3(currHit.point.x - 0.5f, currHit.point.y, currHit.point.z);
         }
 
         if (currentMode != MouseMode.BUILD)
@@ -304,7 +307,7 @@ public class MouseController : MonoBehaviour
                     {
                         //Show the generic dragging visuals
                         // Display the building hint on top of this tile position
-                        GameObject go = SimplePool.Spawn(Cursor, new Vector3(x, 0, z), Quaternion.Euler(90, 0, 0));  // Changed from y to z
+                        GameObject go = SimplePool.Spawn(Cursor, new Vector3(x + 0.5f, 0, z + 0.5f), Quaternion.Euler(90, 0, 0));  // Changed from y to z
                         go.transform.SetParent(this.transform, true);
                         dragPreviewGameObjects.Add(go);
                     }
@@ -346,7 +349,7 @@ public class MouseController : MonoBehaviour
 
         Character proto = World.current.characterPrototypes[characterType];
         go.transform.rotation = Quaternion.Euler(0, 0, 0);
-        go.transform.position = new Vector3(t.X + ((proto.Width - 1) / 2f), 0.904f, t.Z + ((proto.Height - 1) / 2f));
+        go.transform.position = new Vector3(t.X + ((proto.Width - 0.5f) / 1f), 0.904f, t.Z + ((proto.Height - 0.5f) / 1f));
         go.transform.localScale = new Vector3(1, 1, 1);
         go.AddComponent<BillboardController>();
 
@@ -380,7 +383,7 @@ public class MouseController : MonoBehaviour
             // Optionally, you might want to set the material of the MeshRenderer
             meshRenderer.material = TransparencyMaterial;
             Furniture proto = World.current.furniturePrototypes[furnitureType];
-            go.transform.position = new Vector3(t.X + ((proto.Width) / 2f), 0, t.Z + ((proto.Height) / 2f));
+            go.transform.position = new Vector3(t.X + ((proto.Width - 1f) / 2f), 0, t.Z + ((proto.Height - 1f) / 2f));
             go.name = furnitureType.ToString() + "_" + t.X + "_" + t.Z;
 
             if (furn.objectType == "Door")
@@ -409,7 +412,7 @@ public class MouseController : MonoBehaviour
 
             Furniture proto = World.current.furniturePrototypes[furnitureType];
             go.transform.rotation = Quaternion.Euler(90, 0, 0);
-            go.transform.position = new Vector3(t.X + ((proto.Width - 1) / 2f), 0, t.Z + ((proto.Height - 1) / 2f));
+            go.transform.position = new Vector3(t.X + ((proto.Width) / 2f), 0, t.Z + ((proto.Height) / 2f));
 
             if (WorldController.Instance.world.IsFurniturePlacementValid(furnitureType, t))
             {
@@ -434,6 +437,7 @@ public class MouseController : MonoBehaviour
             pan = panAction.ReadValue<Vector2>();
             Vector3 panMovement = new Vector3(-pan.x, 0, -pan.y) * Time.deltaTime * panSpeed;
             Camera.main.transform.position += panMovement;
+            OverlayCamera.transform.position += panMovement;
         }
 
         // Update lastFramePosition here for more accurate movement

@@ -6,14 +6,16 @@ using System.Xml;
 using MoonSharp.Interpreter;
 using System.Collections.Generic;
 
-public enum TileType { Empty, Grass };
+public enum TileType { Empty, Grass, Concrete_Slab, Stone_Panel, Wood_Panel, 
+    Clean_Concrete_Slab, Concrete_Slab2, Cracked_Slab, Road1, Road2, Road3, Road4, 
+    Road5};
 
 public enum ENTERABILITY { Yes, Never, Soon };
 
 [MoonSharpUserData]
 public class Tile : IXmlSerializable, ISelectableInterface
 {
-    TileType _type = TileType.Empty;
+    TileType _type = TileType.Grass;
 
     public TileType Type { 
         get { 
@@ -60,14 +62,51 @@ public class Tile : IXmlSerializable, ISelectableInterface
         }
     }
 
-    Action<Tile> cbTileChanged;
+    public Action<Tile> cbTileChanged;
 
-    public Tile(int x, int z) 
+    public Color TileColor { get; set; }
+
+    public Chunk chunk { get; set; }
+
+    public Tile(int x, int z, Color color) 
     {
         this.X = x;
         this.Z = z;
+        this.TileColor = color;
         characters = new List<Character>();
     }
+
+    public void ChangeColor(Color newColor)
+    {
+        // Notify any listeners that this tile has changed.
+        // ... rest of your method
+        if (TileColor != newColor) // Check if the new color is different to avoid unnecessary updates
+        {
+            TileColor = newColor;
+            // Inform the registered listeners that this tile has changed
+            cbTileChanged?.Invoke(this); // This checks if the callback is not null before invoking
+        }
+
+    }
+
+    public void RegisterTileChanged(Action<Tile> callbackfunc)
+    {
+        cbTileChanged += callbackfunc;
+    }
+
+    public void UnregisterTileChanged(Action<Tile> callbackfunc)
+    {
+        cbTileChanged -= callbackfunc;
+    }
+    //public void ChangeColor(Color newColor)
+    //{
+    //    if (TileColor != newColor) // Check if the new color is different to avoid unnecessary updates
+    //    {
+    //        TileColor = newColor;
+
+    //        // Inform the registered listeners that this tile has changed
+    //    }
+    //}
 
     public void RegisterTileTypeChangedCallback(Action<Tile> callback)
     {

@@ -27,6 +27,8 @@ public class Furniture : IXmlSerializable, ISelectableInterface
     // If the job causes some kind of object to be spawned where will it appear?
     public Vector3 jobSpawnSpotOffset = Vector3.zero;
 
+    public bool hasAddedJob = false;
+
     public void Update(float deltaTime)
     {
         if (updateActions != null)
@@ -258,15 +260,37 @@ public class Furniture : IXmlSerializable, ISelectableInterface
     // This will be replaced by validation checks fed to use fro lua files
     // that will be customizable for each of piece of furniture.
     // For ex. a dor might be specific that it needs two walls to connect to.
+
     protected bool DEFAULT__IsValidPosition(Tile t)
     {
+        List<TileType> allowedTileTypes = new List<TileType>
+    {
+        TileType.Grass,
+        TileType.Stone_Panel,
+        TileType.Wood_Panel,
+        TileType.Concrete_Slab,
+        TileType.Concrete_Slab2,
+        TileType.Clean_Concrete_Slab,
+        TileType.Cracked_Slab,
+        TileType.Road1,
+        TileType.Road2,
+        TileType.Road3,
+        TileType.Road4,
+        TileType.Road5,
+
+
+        // Add more allowed tile types as needed
+    };
+
         for (int x_off = t.X; x_off < (t.X + Width); x_off++)
         {
             for (int z_off = t.Z; z_off < (t.Z + Height); z_off++)
             {
                 Tile t2 = World.current.GetTileAt(x_off, z_off);
 
-                if (t2.Type != TileType.Grass)
+                // Make sure tile doesnt already have furniture
+
+                if (!allowedTileTypes.Contains(t2.Type))
                 {
                     return false;
                 }
@@ -278,8 +302,6 @@ public class Furniture : IXmlSerializable, ISelectableInterface
                 }
             }
         }
-
-     
 
         return true; // Or whatever logic you need here
     }
@@ -484,10 +506,10 @@ public class Furniture : IXmlSerializable, ISelectableInterface
 
     public void AddJob(Job j)
     {
-        j.furniture = this;
-        jobs.Add(j);
-        j.RegisterJobStoppedCallback(OnJobStopped);
-        World.current.jobQueue.Enqueue(j);
+            j.furniture = this;
+            jobs.Add(j);
+            j.RegisterJobStoppedCallback(OnJobStopped);
+            World.current.jobQueue.Enqueue(j);
     }
 
     void OnJobStopped(Job j)

@@ -9,10 +9,14 @@ public class TileSpriteController : MonoBehaviour
 
     Dictionary<Tile, GameObject> tileGameObjectMap;
 
+    public InventoryTileController inventoryTileController;
+
     World world
     {
         get { return WorldController.Instance.world; }
     }
+
+    public string TileTypeFileName = "";
 
     void Start()
     {
@@ -32,14 +36,18 @@ public class TileSpriteController : MonoBehaviour
                 tileGameObjectMap.Add(tile_data, tile_go);
 
                 tile_go.name = "Tile_" + x + "_" + z;
-                tile_go.transform.position = new Vector3(tile_data.X, 0, tile_data.Z);
                 tile_go.transform.rotation = Quaternion.Euler(90, 0, 0);
                 tile_go.transform.localScale = new Vector3(2, 2, 2);
                 tile_go.transform.SetParent(this.transform, true);
 
+                Vector3 tilePosition = new Vector3(tile_data.X + 0.5f, 0, tile_data.Z + 0.5f); // Adjusting for the tile's center
+                tile_go.transform.position = tilePosition;
+
+
                 // Add a sprite renderer
                 SpriteRenderer sr = tile_go.AddComponent<SpriteRenderer>();
                 sr.material = TileMaterial;
+                sr.material.color = tile_data.TileColor;
 
                 Sprite spr = SpriteManager.current.GetSprite("Tiles", "Empty");
 
@@ -52,46 +60,31 @@ public class TileSpriteController : MonoBehaviour
                 collider.size = new Vector3(1, 1, 1); // Set the size to match your tiles
 
                 OnTileChanged(tile_data);
+                tile_data.RegisterTileChanged(OnTileChanged);
             }
         }
 
         world.RegisterTileChanged(OnTileChanged);
     }
 
-    void OnTileChanged(Tile tile_data)
+public void OnTileChanged(Tile tile_data)
     {
-        if (tileGameObjectMap.ContainsKey(tile_data) == false)
+        if (!tileGameObjectMap.TryGetValue(tile_data, out var tile_go))
         {
-            Debug.LogError("tileGameObjectMap doesnt contain the tile_data");
+            Debug.LogError("OnTileChanged - Invalid tile data!");
             return;
         }
-
-        GameObject tile_go = tileGameObjectMap[tile_data];
 
         if (tile_go == null)
         {
-            Debug.LogError("tileGameObjectMap returned game object is null");
+            Debug.LogError("OnTileChanged - Missing game object!");
             return;
         }
 
-        if (tile_data.Type == TileType.Grass)
-        {
-            tile_go.GetComponent<SpriteRenderer>().material = TileMaterial;
-            tile_go.GetComponent<SpriteRenderer>().sprite = SpriteManager.current.GetSprite("Tiles", "Grass");
-            tile_go.transform.localScale = new Vector3(2, 2, 2);
-
-        }
-        else if (tile_data.Type == TileType.Empty)
-        {
-            tile_go.GetComponent<SpriteRenderer>().material = TileMaterial;
-            tile_go.GetComponent<SpriteRenderer>().sprite = SpriteManager.current.GetSprite("Tiles", "Empty");
-            tile_go.transform.localScale = new Vector3(2, 2, 2);
-
-        }
-        else
-        {
-            Debug.LogError("OnTileTypeChanged - Unrecognized tile type.");
-        }
+        // Set the appropriate sprite based on the tile type.
+        tile_go.GetComponent<SpriteRenderer>().sprite = SpriteManager.current.GetSprite("Tiles", tile_data.Type.ToString());
+        tile_go.GetComponent<SpriteRenderer>().material.color = tile_data.TileColor;
     }
+
 }
 

@@ -144,7 +144,7 @@ public class InventoryManager
     /// <param name="objectType">Object type.</param>
     /// <param name="t">T.</param>
     /// <param name="desiredAmount">Desired amount. If no stack has enough, it instead returns the largest</param>
- 	public Inventory GetClosestInventoryOfType(string objectType, Tile t, int desiredAmount, bool canTakeFromStockpile)
+    public Inventory GetClosestInventoryOfType(string objectType, Tile t, int desiredAmount, bool canTakeFromStockpile)
     {
         Path_AStar path = GetPathToClosestInventoryOfType(objectType, t, desiredAmount, canTakeFromStockpile);
         return path.EndTile().inventory;
@@ -163,5 +163,6 @@ public class InventoryManager
         return path;
 
     }
+
 
 }
