@@ -67,7 +67,7 @@ public class InventorySpriteController : MonoBehaviour
         inventoryGameObjectMap.Add(inv, inv_go);
 
         inv_go.name = inv.objectType;
-        inv_go.transform.position = new Vector3(inv.tile.X, 0.4f, inv.tile.Z);
+        inv_go.transform.position = new Vector3(inv.tile.X + 0.5f, 0.4f, inv.tile.Z + 0.5f);
         inv_go.transform.localScale = new Vector3(2, 2, 2);
         inv_go.transform.SetParent(this.transform, true);
 
@@ -109,7 +109,7 @@ public class InventorySpriteController : MonoBehaviour
 
         GameObject inv_go = inventoryGameObjectMap[inv];
         inv_go.name = inv.objectType;
-        inv_go.transform.position = new Vector3(inv.tile.X, 0.4f, inv.tile.Z);
+        inv_go.transform.position = new Vector3(inv.tile.X + 0.5f, 0.4f, inv.tile.Z + 0.5f);
         inv_go.transform.localScale = new Vector3(2, 2, 2);
         inv_go.transform.SetParent(this.transform, true);
 

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using MoonSharp.Interpreter;
 using Unity.Jobs;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.VisualScripting;
 
 public enum CharacterType
 {
@@ -20,9 +21,6 @@ public enum CharacterType
 [MoonSharpUserData]
 public class Character : IXmlSerializable, ISelectableInterface
 {
-
-    bool LookingForNewJob = true;
-
     public CharacterType Type { get; set; }
 
     protected Dictionary<string, float> charParameters;
@@ -72,7 +70,7 @@ public class Character : IXmlSerializable, ISelectableInterface
 
     // If we aren't moving, then destTile = currTile
     Tile _destTile;
-    Tile DestTile
+    public Tile DestTile
     {
         get { return _destTile; }
         set
@@ -94,7 +92,7 @@ public class Character : IXmlSerializable, ISelectableInterface
         get; set;
     }
 
-    Tile nextTile;  // The next tile in the pathfinding sequence
+    public Tile nextTile;  // The next tile in the pathfinding sequence
     Path_AStar pathAStar;
     float movementPercentage; // Goes from 0 to 1 as we move from currTile to destTile
 
@@ -102,7 +100,7 @@ public class Character : IXmlSerializable, ISelectableInterface
 
     Action<Character> cbCharacterChanged;
 
-    Job myJob;
+    public Job myJob;
 
     // The item we are carrying (not gear/equipment)
     public Inventory inventory;
@@ -136,6 +134,8 @@ public class Character : IXmlSerializable, ISelectableInterface
 
     Func<Tile, bool> funcPositionValidation;
 
+    private StateMachine stateMachine;
+
     public Character()
     {
         // Use only for serialization
@@ -143,15 +143,13 @@ public class Character : IXmlSerializable, ISelectableInterface
         charParameters = new Dictionary<string, float>();
         this.Height = 1;
         this.Width = 1;
-
-
     }
 
     public Character(Tile tile)
     {
         currTile = DestTile = nextTile = tile;
-
-
+        stateMachine = new StateMachine(this);
+        stateMachine.TransitionToState(new IdleState());  // Set initial state
     }
 
     // Copy Constructor -- don't call this directly, unless we never
@@ -163,6 +161,7 @@ public class Character : IXmlSerializable, ISelectableInterface
         if (other.funcPositionValidation != null)
             this.funcPositionValidation = (Func<Tile, bool>)other.funcPositionValidation.Clone();
         this.cpf = other.cpf;
+        this.stateMachine = other.stateMachine;
     }
 
     virtual public Character Clone()
@@ -170,8 +169,6 @@ public class Character : IXmlSerializable, ISelectableInterface
         return new Character(this);
     }
 
-    int timerTest = 0;
-    private bool isJobStarted = false; // Flag to check if a new job has started
     public void RegisterTileChanged(Action<Tile> callbackfunc)
     {
         cbTileChanged += callbackfunc;
@@ -182,7 +179,7 @@ public class Character : IXmlSerializable, ISelectableInterface
         cbTileChanged -= callbackfunc;
     }
 
-    void GetNewJob()
+    public void GetNewJob()
     {
         myJob = World.current.jobQueue.Dequeue();
         if (myJob == null)
@@ -209,9 +206,7 @@ public class Character : IXmlSerializable, ISelectableInterface
             //            {
             //                // Assuming item1 is your Tile object
             //                //item1.cbTileChanged += OnTileChanged; // Subscribe
-
             //                item1.ChangeColor(Color.red); // Then change color
-
             //            }
             //        }
             //    }
@@ -239,13 +234,7 @@ public class Character : IXmlSerializable, ISelectableInterface
         }
     }
 
-    // Okay the tiles are changing color now which is good.
-    // GetNewJob gets called twice, once when the user tells a work
-    // to move and work on a job, and a second time after its finished its current job.
-    // I want to reset the color of the tiles back to white,
-    // and I want to renable isJobStarted
     float jobSearchCooldown = 0;
-
 
     void Update_DoJob(float deltaTime)
     {
@@ -258,14 +247,14 @@ public class Character : IXmlSerializable, ISelectableInterface
                 // Don't look for job now.
                 return;
             }
-                GetNewJob();
+
+            GetNewJob();
 
             if (myJob == null)
             {
                 // There was no job on the queue for us, so just return.
                 jobSearchCooldown = UnityEngine.Random.Range(0.1f, 0.5f);
                 DestTile = currTile;
-
                 return;
             }
         }
@@ -327,7 +316,6 @@ public class Character : IXmlSerializable, ISelectableInterface
             else
             {
                 // At this point, the job still requires inventory, but we aren't carrying it!
-
                 // Are we standing on a tile with goods that are desired by the job?
                 if (currTile.inventory != null &&
                     (myJob.canTakeFromStockpile || currTile.furniture == null || currTile.furniture.IsStockpile() == false) &&
@@ -339,7 +327,6 @@ public class Character : IXmlSerializable, ISelectableInterface
                         currTile.inventory,
                         myJob.DesiresInventoryType(currTile.inventory)
                     );
-
                 }
                 else
                 {
@@ -417,7 +404,6 @@ public class Character : IXmlSerializable, ISelectableInterface
             // execute the job's "DoWork", which is mostly
             // going to countdown jobTime and potentially
             // call its "Job Complete" callback.
-
             myJob.DoWork(deltaTime);
         }
 
@@ -438,11 +424,8 @@ public class Character : IXmlSerializable, ISelectableInterface
         {
             pathAStar = null;
             // Clears the color back to normal..
-       
             return; // We're already were we want to be.
         }
-
-      
 
         // currTile = The tile I am currently in (and may be in the process of leaving)
         // nextTile = The tile I am currently entering
@@ -453,7 +436,6 @@ public class Character : IXmlSerializable, ISelectableInterface
             // Get the next tile from the pathfinder.
             if (pathAStar == null || pathAStar.Length() == 0)
             {
-                
                 pathAStar = new Path_AStar(World.current, currTile, DestTile);  // This will calculate a path from curr to dest.
                 if (pathAStar.Length() == 0)
                 {
@@ -465,7 +447,6 @@ public class Character : IXmlSerializable, ISelectableInterface
                 // Let's ignore the first tile, because that's the tile we're currently in.
                 nextTile = pathAStar.Dequeue();
             }
-
             // Grab the next waypoint from the pathing system!
             nextTile = pathAStar.Dequeue();
 
@@ -476,7 +457,6 @@ public class Character : IXmlSerializable, ISelectableInterface
         }
 
         // At this point we should have a valid nextTile to move to.
-
         // What's the total distance from point A to point B?
         // We are going to use Euclidean distance FOR NOW...
         // But when we do the pathfinding system, we'll likely
@@ -533,6 +513,8 @@ public class Character : IXmlSerializable, ISelectableInterface
 
     public void Update(float deltaTime)
     {
+        stateMachine.Update();
+
         Update_DoJob(deltaTime);
         Update_DoMovement(deltaTime);
 
@@ -542,8 +524,6 @@ public class Character : IXmlSerializable, ISelectableInterface
 
     public void SetDestination(Tile tile)
     {
-
-
         if (currTile.IsNeighbour(tile, true) == false)
         {
             Debug.Log("Character::SetDestination -- Our destination tile isn't actually our neighbour.");
@@ -601,7 +581,7 @@ public class Character : IXmlSerializable, ISelectableInterface
         return true; // Or whatever logic you need here
     }
 
-    void OnJobStopped(Job j)
+    public void OnJobStopped(Job j)
     {
         // Job completed (if non-repeating) or was cancelled.
 
@@ -613,7 +593,7 @@ public class Character : IXmlSerializable, ISelectableInterface
             return;
         }
 
-        ///myJob = null;
+       myJob = null;
     }
 
 

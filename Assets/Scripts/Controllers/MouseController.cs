@@ -383,7 +383,7 @@ public class MouseController : MonoBehaviour
             // Optionally, you might want to set the material of the MeshRenderer
             meshRenderer.material = TransparencyMaterial;
             Furniture proto = World.current.furniturePrototypes[furnitureType];
-            go.transform.position = new Vector3(t.X + ((proto.Width - 1f) / 2f), 0, t.Z + ((proto.Height - 1f) / 2f));
+            go.transform.position = new Vector3(t.X + ((proto.Width + 1) / 2f), 0, t.Z + ((proto.Height + 1) / 2f));
             go.name = furnitureType.ToString() + "_" + t.X + "_" + t.Z;
 
             if (furn.objectType == "Door")

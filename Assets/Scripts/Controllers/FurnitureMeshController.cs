@@ -72,7 +72,7 @@ public class FurnitureMeshController : MonoBehaviour
             furnitureGameObjectMap.Add(furn, furn_go);
 
             furn_go.name = furn.objectType.ToString() + "_" + furn.tile.X + "_" + furn.tile.Z;
-            furn_go.transform.position = new Vector3(furn.tile.X + ((furn.Width)/2f), 0, furn.tile.Z + ((furn.Height) / 2f));
+            furn_go.transform.position = new Vector3(furn.tile.X + ((furn.Width + 1)/2f), 0, furn.tile.Z + ((furn.Height + 1) / 2f));
             furn_go.transform.SetParent(this.transform, true);
             // Get MeshRenderer component to the GameObject
             MeshRenderer meshRenderer = furn_go.GetComponent<MeshRenderer>();
@@ -147,8 +147,9 @@ public class FurnitureMeshController : MonoBehaviour
 
             // Get updated game object name and rotation for the new state of the furniture
             string updatedGameObjectName = GetGameObjectForFurniture(furn).ToString();  // Assuming you have such a function
+            
 
-            GameObject newFurn_go = Instantiate(GetGameObjectForFurniture(furn), new Vector3(furn.tile.X + ((furn.Width) / 2f), 0, furn.tile.Z + ((furn.Height) / 2f)) , Quaternion.identity); 
+            GameObject newFurn_go = Instantiate(GetGameObjectForFurniture(furn), new Vector3(furn.tile.X + ((furn.Width + 1) / 2f), 0, furn.tile.Z + ((furn.Height + 1) / 2f)), Quaternion.identity); 
             newFurn_go.name = updatedGameObjectName + "_" + furn.tile.X + "_" + furn.tile.Z;
             newFurn_go.transform.SetParent(this.transform, true);
             MeshRenderer meshRenderer = newFurn_go.GetComponent<MeshRenderer>();
@@ -158,7 +159,7 @@ public class FurnitureMeshController : MonoBehaviour
             //This hardcoding is not ideal!
             if (furn.objectType == "Door")
             {
-                newFurn_go.transform.position = new Vector3(furn.tile.X + ((furn.Width - 1) / 2f), 0, furn.tile.Z + ((furn.Height - 1) / 2f));
+                newFurn_go.transform.position = new Vector3(furn.tile.X + ((furn.Width + 1) / 2f), 0, furn.tile.Z + ((furn.Height + 1) / 2f));
 
                 // By default, the door mesh is meant for walls to the east and west
                 // check to see if we actually have a wall north/south, and if so

@@ -59,7 +59,7 @@ public class JobMeshController : MonoBehaviour
             jobGameObjectMap.Add(job, job_go);
 
             job_go.name = "JOB_" + job.jobObjectType + "_" + job.tile.X + "_" + job.tile.Z;
-            job_go.transform.position = new Vector3(job.tile.X + ((job.furniturePrototype.Width) / 2f), 0, job.tile.Z + ((job.furniturePrototype.Height) / 2f));
+            job_go.transform.position = new Vector3(job.tile.X + ((job.furniturePrototype.Width + 1) / 2f), 0, job.tile.Z + ((job.furniturePrototype.Height + 1) / 2f));
 
             job_go.transform.SetParent(this.transform, true);
 
