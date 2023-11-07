@@ -10,6 +10,8 @@ public class InventorySpriteController : MonoBehaviour
 
     Dictionary<string, Sprite> inventorySprites;
 
+    public Material InventoryMaterial;
+
     World world
     {
         get { return WorldController.Instance.world; }
@@ -67,13 +69,21 @@ public class InventorySpriteController : MonoBehaviour
         inventoryGameObjectMap.Add(inv, inv_go);
 
         inv_go.name = inv.objectType;
-        inv_go.transform.position = new Vector3(inv.tile.X + 0.5f, 0.4f, inv.tile.Z + 0.5f);
-        inv_go.transform.localScale = new Vector3(2, 2, 2);
+        inv_go.transform.position = new Vector3(inv.tile.X, 0.4f, inv.tile.Z);
         inv_go.transform.SetParent(this.transform, true);
 
         SpriteRenderer sr = inv_go.AddComponent<SpriteRenderer>();
-        sr.sprite = SpriteManager.current.GetSprite("Inventory", inv.objectType);
-        sr.sortingLayerName = "Inventory";
+        sr.sprite = inventorySprites[inv.objectType];
+
+        // Inventory Sprites are set on the same layer as the Character Sprites,
+        // so that the depth of the sprites are handled correctly..
+        sr.sortingLayerName = "Characters";
+
+        // Character and Inventory Material uses a shader..
+        // Im unsure if the shader is actually doing the work..
+        sr.material = InventoryMaterial;
+
+        inv_go.layer = 8;
 
         inv_go.AddComponent<BillboardController>();
 
@@ -82,9 +92,14 @@ public class InventorySpriteController : MonoBehaviour
             // This is a stackable object, so lets add a InventoryUI component
             // which is text that shows the current stack size.
             GameObject ui_go = Instantiate(inventoryUIPrefab);
+            // Inventory text are set on the same layer as the Character Sprites,
+            // so that the depth of the sprites are handled correctly..
+            ui_go.GetComponent<Canvas>().sortingLayerName = "Characters";
             ui_go.transform.SetParent(inv_go.transform);
             ui_go.transform.localPosition = Vector3.zero;
+
             ui_go.GetComponentInChildren<TextMeshProUGUI>().text = inv.stackSize.ToString();
+            ui_go.layer = 7;
         }
 
         // Register our callback so that our GameObject gets updated whenever
@@ -109,9 +124,10 @@ public class InventorySpriteController : MonoBehaviour
 
         GameObject inv_go = inventoryGameObjectMap[inv];
         inv_go.name = inv.objectType;
-        inv_go.transform.position = new Vector3(inv.tile.X + 0.5f, 0.4f, inv.tile.Z + 0.5f);
-        inv_go.transform.localScale = new Vector3(2, 2, 2);
+        inv_go.transform.position = new Vector3(inv.tile.X, 0.4f, inv.tile.Z);
         inv_go.transform.SetParent(this.transform, true);
+        inv_go.layer = 8;
+
 
         if (inv.stackSize > 0)
         {

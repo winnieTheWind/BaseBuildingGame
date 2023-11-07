@@ -14,9 +14,13 @@ public class CharacterSpriteController : MonoBehaviour
         get { return WorldController.Instance.world; }
     }
 
+    public Material CharacterMaterial;
+
     // Start is called before the first frame update
     void Start()
     {
+        LoadSprites();
+
         characterGameObjectMap = new Dictionary<Character, GameObject>();
 
         world.RegisterCharacterCreated(OnCharacterCreated);
@@ -25,6 +29,17 @@ public class CharacterSpriteController : MonoBehaviour
         foreach (Character c in world.characters)
         {
             OnCharacterCreated(c);
+        }
+    }
+
+    void LoadSprites()
+    {
+        characterSprites = new Dictionary<string, Sprite>();
+        Sprite[] charSprites = Resources.LoadAll<Sprite>("Sprites/Characters");
+        foreach (var item in charSprites)
+        {
+            //Debug.Log(item);
+            characterSprites[item.name] = item;
         }
     }
 
@@ -43,18 +58,24 @@ public class CharacterSpriteController : MonoBehaviour
         characterGameObjectMap.Add(character, char_go);
 
         char_go.name = "Character";
-        char_go.transform.position = new Vector3(character.currTile.X + 0.5f, 0.904f, character.currTile.Z + 0.5f);
+        char_go.transform.position = new Vector3(character.CurrTile.X, 0.904f, character.CurrTile.Z);
         char_go.transform.rotation = Quaternion.Euler(0, 0, 0);
         char_go.transform.localScale = new Vector3(1, 1, 1);
         char_go.transform.SetParent(this.transform, true);
         
         SpriteRenderer sr = char_go.AddComponent<SpriteRenderer>();
-        sr.sprite = SpriteManager.current.GetSprite("Characters", "peoplesprite1_7");
+        sr.sprite = characterSprites["peoplesprite1_7"];
         sr.sortingLayerName = "Characters";
+
+        sr.material = CharacterMaterial;
+
+        char_go.layer = 7;
 
         // Ensure the character is properly scaled and oriented
         char_go.transform.localScale = Vector3.one; // Set scale to (1, 1, 1)
         char_go.transform.rotation = Quaternion.identity; // Reset rotation
+
+        character.Type = CharacterType.ConstructionWorker;
 
         // Add BillboardController component
         BillboardController billboardController = char_go.AddComponent<BillboardController>();
@@ -73,14 +94,13 @@ public class CharacterSpriteController : MonoBehaviour
         GameObject char_go = characterGameObjectMap[c];
 
         // Ensure the billboard effect
-        //char_go.transform.LookAt(Camera.main.transform.position);
-        //char_go.transform.Rotate(0, 180, 0);
+        char_go.transform.LookAt(Camera.main.transform.position);
+        char_go.transform.Rotate(0, 180, 0);
+        char_go.layer = 7;
 
         char_go.transform.localScale = new Vector3(1, 1, 1);
-        char_go.transform.position = new Vector3(c.X + 0.5f, 0.904f, c.Z + 0.5f);
+        char_go.transform.position = new Vector3(c.X, 0.904f, c.Z);
+        c.Type = CharacterType.ConstructionWorker;
 
-
-        // Set character type based on your logic
-        c.Type = CharacterType.ConstructionWorker; // For example
     }
 }

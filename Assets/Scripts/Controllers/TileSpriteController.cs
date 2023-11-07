@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using TMPro;
+using UnityEngine.U2D;
 
 public class TileSpriteController : MonoBehaviour
 {
@@ -7,21 +9,36 @@ public class TileSpriteController : MonoBehaviour
 
     public Material WallMaterial;
 
-    Dictionary<Tile, GameObject> tileGameObjectMap;
+    public GameObject BitmaskText;
 
-    public InventoryTileController inventoryTileController;
+    Dictionary<Tile, GameObject> tileGameObjectMap;
+    Dictionary<Tile, GameObject> layerTileGameObjectMap;
+
+
+    Dictionary<string, Sprite> tileSprites;
 
     World world
     {
         get { return WorldController.Instance.world; }
     }
 
-    public string TileTypeFileName = "";
+    void LoadSprites()
+    {
+        tileSprites = new Dictionary<string, Sprite>();
+
+        Sprite[] sprites = Resources.LoadAll<Sprite>("Sprites/Tiles/"); // Adjust the path to your sprites
+        foreach (Sprite sprite in sprites)
+        {
+            tileSprites[sprite.name] = sprite;
+        }
+    }
 
     void Start()
     {
+        LoadSprites();
         // Instantiate dictionary which tracks which gameobject is rendering which tile data.
         tileGameObjectMap = new Dictionary<Tile, GameObject>();
+        layerTileGameObjectMap = new Dictionary<Tile, GameObject>();
 
         // Create a gameobject for each of our tiles
         for (int x = 0; x < world.Width; x++)
@@ -36,38 +53,32 @@ public class TileSpriteController : MonoBehaviour
                 tileGameObjectMap.Add(tile_data, tile_go);
 
                 tile_go.name = "Tile_" + x + "_" + z;
+                tile_go.transform.position = new Vector3(tile_data.X, 0, tile_data.Z);
                 tile_go.transform.rotation = Quaternion.Euler(90, 0, 0);
-                tile_go.transform.localScale = new Vector3(2, 2, 2);
                 tile_go.transform.SetParent(this.transform, true);
-
-                Vector3 tilePosition = new Vector3(tile_data.X + 0.5f, 0, tile_data.Z + 0.5f); // Adjusting for the tile's center
-                tile_go.transform.position = tilePosition;
-
+                //tile_go.transform.localScale = new Vector3(2, 2, 2);
 
                 // Add a sprite renderer
                 SpriteRenderer sr = tile_go.AddComponent<SpriteRenderer>();
                 sr.material = TileMaterial;
-                sr.material.color = tile_data.TileColor;
+                sr.sprite = tileSprites["Grass"];
+                sr.material.SetTexture("Grass", tileSprites["Grass"].texture);
 
-                Sprite spr = SpriteManager.current.GetSprite("Tiles", "Empty");
-
-                sr.sprite = spr;
-                //sr.transform.localScale = new Vector3(1, 0, 1);
-                sr.material.SetTexture("Empty", SpriteManager.current.GetSprite("Tiles", "Empty").texture);
+                //sr.material.SetTexture("EmptySprite", SpriteManager.current.GetSprite("Tiles", Tile.).texture);
+                sr.sortingLayerName = "Tiles";
 
                 // Add a collider
                 BoxCollider collider = tile_go.AddComponent<BoxCollider>();
                 collider.size = new Vector3(1, 1, 1); // Set the size to match your tiles
 
                 OnTileChanged(tile_data);
-                tile_data.RegisterTileChanged(OnTileChanged);
             }
         }
 
         world.RegisterTileChanged(OnTileChanged);
     }
 
-public void OnTileChanged(Tile tile_data)
+    public void OnTileChanged(Tile tile_data)
     {
         if (!tileGameObjectMap.TryGetValue(tile_data, out var tile_go))
         {
@@ -81,10 +92,12 @@ public void OnTileChanged(Tile tile_data)
             return;
         }
 
+        //tile_go.transform.localScale = new Vector3(2, 2, 2);
         // Set the appropriate sprite based on the tile type.
-        tile_go.GetComponent<SpriteRenderer>().sprite = SpriteManager.current.GetSprite("Tiles", tile_data.Type.ToString());
-        tile_go.GetComponent<SpriteRenderer>().material.color = tile_data.TileColor;
-    }
+        tile_go.GetComponent<SpriteRenderer>().sprite = tileSprites[tile_data.Type.ToString()];
+        //layerTile_go.GetComponent<SpriteRenderer>().sprite = tileSprites[tile_data.LayerTile.Type.ToString()];
 
+    }
 }
+
 

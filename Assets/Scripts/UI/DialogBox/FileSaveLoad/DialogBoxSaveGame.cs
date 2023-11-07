@@ -40,8 +40,7 @@ public class DialogBoxSaveGame : DialogBoxLoadSaveGame
         if (File.Exists(filePath) == true)
         {
             // TODO: Do file overwrite dialog box.
-
-            Debug.LogError("File already exists -- overwriting the file for now.");
+            //Debug.LogError("File already exists -- overwriting the file for now.");
 
         }
 
@@ -56,8 +55,6 @@ public class DialogBoxSaveGame : DialogBoxLoadSaveGame
         // from the save dialog box.
 
         // Get the file name from the save file dialog box
-
-        Debug.Log("SaveWorld button was clicked.");
 
         XmlSerializer serializer = new XmlSerializer(typeof(World));
         TextWriter writer = new StringWriter();

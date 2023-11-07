@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using System;
 
 public class JobQueue
@@ -68,10 +66,5 @@ public class JobQueue
 
         jobs.Remove(j);
         jobQueue = new Queue<Job>(jobs);
-    }
-
-    public int Length()
-    {
-        return jobQueue.Count;
     }
 }

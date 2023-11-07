@@ -174,3 +174,6 @@ public class SpriteManager : MonoBehaviour
         return sprites[spriteName];
     }
 }
+
+// Ok this class SpriteManager handles game assets that are in the StreamingAssets folder.
+// I need to rewrite this code so that it looks in the Resources folder instead.

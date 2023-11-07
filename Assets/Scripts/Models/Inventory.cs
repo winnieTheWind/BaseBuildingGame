@@ -1,16 +1,15 @@
-//=======================================================================
-// Copyright Martin "quill18" Glaude 2015-2016.
-//		http://quill18.com
-//=======================================================================
 
 using System;
+using System.Xml.Schema;
+using System.Xml;
+using System.Xml.Serialization;
 using MoonSharp.Interpreter;
 
 // Inventory are things that are lying on the floor/stockpile, like a bunch of metal bars
 // or potentially a non-installed copy of furniture (e.g. a cabinet still in the box from Ikea)
 
 [MoonSharpUserData]
-public class Inventory : ISelectableInterface
+public class Inventory : IXmlSerializable, ISelectableInterface
 {
     public string objectType = "Steel_Plate";
     public int maxStackSize = 50;
@@ -32,9 +31,6 @@ public class Inventory : ISelectableInterface
         }
     }
 
-    public bool IsInStockpile = false;
-
-    // The function we callback any time our tile's data changes
     Action<Inventory> cbInventoryChanged;
 
     public Tile tile;
@@ -43,11 +39,6 @@ public class Inventory : ISelectableInterface
     public Inventory()
     {
 
-    }
-
-    static public Inventory New(string objectType, int maxStackSize, int stackSize)
-    {
-        return new Inventory(objectType, maxStackSize, stackSize);
     }
 
     public Inventory(string objectType, int maxStackSize, int stackSize)
@@ -77,6 +68,38 @@ public class Inventory : ISelectableInterface
     public void UnregisterChangedCallback(Action<Inventory> callback)
     {
         cbInventoryChanged -= callback;
+    }
+
+    // IXmlSerializable implementation
+    public XmlSchema GetSchema()
+    {
+        return null;
+    }
+
+    public void ReadXml(XmlReader reader)
+    {
+        // Deserialize the Inventory from XML.
+        objectType = reader.GetAttribute("objectType");
+        maxStackSize = int.Parse(reader.GetAttribute("maxStackSize"));
+
+        // You might want to use int.TryParse for better error handling
+        int stackSizeValue;
+        if (int.TryParse(reader.GetAttribute("stackSize"), out stackSizeValue))
+        {
+            stackSize = stackSizeValue;
+        }
+
+        // Read any additional details here...
+    }
+
+    public void WriteXml(XmlWriter writer)
+    {
+        // Serialize the Inventory to XML.
+        writer.WriteAttributeString("objectType", objectType);
+        writer.WriteAttributeString("maxStackSize", maxStackSize.ToString());
+        writer.WriteAttributeString("stackSize", stackSize.ToString());
+
+        // Write any additional details here...
     }
 
     #region ISelectableInterface implementation

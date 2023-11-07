@@ -3,19 +3,23 @@ using System;
 using System.Xml.Serialization;
 using System.Xml.Schema;
 using System.Xml;
-using MoonSharp.Interpreter;
 using System.Collections.Generic;
+using MoonSharp.Interpreter;
 
-public enum TileType { Empty, Grass, Concrete_Slab, Stone_Panel, Wood_Panel, 
-    Clean_Concrete_Slab, Concrete_Slab2, Cracked_Slab, Road1, Road2, Road3, Road4, 
-    Road5};
+public enum TileType { 
+
+    Empty, Grass, Slab1, Slab2, 
+    Slab3, Slab4, Road1, Road2, 
+    Road3, Road4, Road5, Stone_Panel, 
+    Wood_Panel, Dirt, Stockpile
+};
 
 public enum ENTERABILITY { Yes, Never, Soon };
 
 [MoonSharpUserData]
 public class Tile : IXmlSerializable, ISelectableInterface
 {
-    TileType _type = TileType.Grass;
+    TileType _type = TileType.Empty;
 
     public TileType Type { 
         get { 
@@ -33,9 +37,12 @@ public class Tile : IXmlSerializable, ISelectableInterface
         }
     }
 
-    public Room room;
+    public LayerTile LayerTile
+    {
+        get; protected set;
+    }
 
-    public List<Character> characters;
+    public Room room;
 
     public Inventory inventory;
     public Furniture furniture
@@ -43,10 +50,21 @@ public class Tile : IXmlSerializable, ISelectableInterface
         get; protected set;
     }
 
+
+
+    public List<Character> characters;
+
     public Job pendingFurnitureJob;
+    public Job pendingTileJob;
+
+    Action<Tile> cbTileChanged;
 
     public int X { get; protected set; }
     public int Z { get; protected set; }
+
+    public bool isUsingBitmaskText = false;
+
+    private float _movementCost = 1f; // Default value
 
     public float movementCost
     {
@@ -56,57 +74,34 @@ public class Tile : IXmlSerializable, ISelectableInterface
                 return 0;   // 0 is unwalkable
 
             if (furniture == null)
-                return 1;
+                return _movementCost;
 
-            return 1 * furniture.movementCost;
+            if (furniture.objectType == "Mining_Drone_Station")
+            {
+                if (furniture.GetJobSpotTile() == this)
+                    return 1;
+                if (furniture.GetSpawnSpotTile() == this)
+                    return 1;
+            }
+
+            return _movementCost * furniture.movementCost;
+
+        }
+        set
+        {
+            _movementCost = value;
         }
     }
 
-    public Action<Tile> cbTileChanged;
 
-    public Color TileColor { get; set; }
 
-    public Chunk chunk { get; set; }
-
-    public Tile(int x, int z, Color color) 
+    public Tile(int x, int z) 
     {
         this.X = x;
         this.Z = z;
-        this.TileColor = color;
         characters = new List<Character>();
-    }
-
-    public void ChangeColor(Color newColor)
-    {
-        // Notify any listeners that this tile has changed.
-        // ... rest of your method
-        if (TileColor != newColor) // Check if the new color is different to avoid unnecessary updates
-        {
-            TileColor = newColor;
-            // Inform the registered listeners that this tile has changed
-            cbTileChanged?.Invoke(this); // This checks if the callback is not null before invoking
-        }
 
     }
-
-    public void RegisterTileChanged(Action<Tile> callbackfunc)
-    {
-        cbTileChanged += callbackfunc;
-    }
-
-    public void UnregisterTileChanged(Action<Tile> callbackfunc)
-    {
-        cbTileChanged -= callbackfunc;
-    }
-    //public void ChangeColor(Color newColor)
-    //{
-    //    if (TileColor != newColor) // Check if the new color is different to avoid unnecessary updates
-    //    {
-    //        TileColor = newColor;
-
-    //        // Inform the registered listeners that this tile has changed
-    //    }
-    //}
 
     public void RegisterTileTypeChangedCallback(Action<Tile> callback)
     {
@@ -116,6 +111,31 @@ public class Tile : IXmlSerializable, ISelectableInterface
     public void UnregisterTileTypeChangedCallback(Action<Tile> callback)
     {
         cbTileChanged -= callback;
+    }
+
+    public bool UnplaceLayerTile()
+    {
+        // Just uninstalling. FIXME: What if we have a multi tile furniture?
+        //furniture = null;
+
+        if (LayerTile == null)
+        {
+            return false;
+        }
+
+        LayerTile l = LayerTile;
+
+        for (int x_off = X; x_off < (X + l.Width); x_off++)
+        {
+            for (int z_off = Z; z_off < (Z + l.Height); z_off++)
+            {
+                // At this point, everythings fine..
+                Tile t = World.current.GetTileAt(x_off, z_off);
+                t.LayerTile = null;
+            }
+        }
+
+        return true;
     }
 
     public bool UnplaceFurniture()
@@ -163,6 +183,33 @@ public class Tile : IXmlSerializable, ISelectableInterface
                 // At this point, everythings fine..
                 Tile t = World.current.GetTileAt(x_off, z_off);
                 t.furniture = objInstance;
+            }
+        }
+
+        return true;
+    }
+
+
+    public bool PlaceLayerTile(LayerTile objInstance)
+    {
+        if (objInstance == null)
+        {
+            return UnplaceLayerTile();
+        }
+
+        if (objInstance.IsValidPosition(this) == false)
+        {
+            Debug.LogError("Trying to assign a furniture to a tile that isnt valid.");
+            return false;
+        }
+
+        for (int x_off = X; x_off < (X + objInstance.Width); x_off++)
+        {
+            for (int z_off = Z; z_off < (Z + objInstance.Height); z_off++)
+            {
+                // At this point, everythings fine..
+                Tile t = World.current.GetTileAt(x_off, z_off);
+                t.LayerTile = objInstance;
             }
         }
 
@@ -256,20 +303,6 @@ public class Tile : IXmlSerializable, ISelectableInterface
         return ns;
     }
 
-    public ENTERABILITY IsEnterable()
-    {
-        // This returns true if you can enter this tile right this moment.
-        if (movementCost == 0)
-            return ENTERABILITY.Never;
-
-        // Check out furniture to see if it has a special block on enterability
-        if (furniture != null)
-        {
-            return furniture.IsEnterable();
-        }
-
-        return ENTERABILITY.Yes;
-    }
 
     public XmlSchema GetSchema()
     {
@@ -280,19 +313,29 @@ public class Tile : IXmlSerializable, ISelectableInterface
     {
         writer.WriteAttributeString("X", X.ToString());
         writer.WriteAttributeString("Z", Z.ToString());
-        writer.WriteAttributeString("RoomID", room == null ? "-1" : room.ID.ToString());
         writer.WriteAttributeString("Type", ((int)Type).ToString());
     }
 
 
     public void ReadXml(XmlReader reader)
     {
-        // X and Z have already been read/processed
-        room = World.current.GetRoomFromID(int.Parse(reader.GetAttribute("RoomID")));
-
         Type = (TileType)int.Parse(reader.GetAttribute("Type"));
     }
 
+    public ENTERABILITY IsEnterable()
+    {
+        // this returns true if you enter this tile right this moment.
+        if (movementCost == 0)
+        {
+            return ENTERABILITY.Never;
+        }
+        // check out firntiure to see if it has a special block on enterability
+        if (furniture != null && furniture.IsEnterable != null)
+        {
+            return furniture.IsEnterable(furniture);
+        }
+        return ENTERABILITY.Yes;
+    }
 
     public Tile North()
     {

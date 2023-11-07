@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 using Priority_Queue;
 using System.Linq;
@@ -254,5 +254,7 @@ public class Path_AStar
 
         return path.Last();
     }
+
+
 
 }

@@ -8,12 +8,12 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - RenderInFront
+  - 
   - Water
   - UI
   - 
-  - 
-  - 
+  - Character
+  - Inventory
   - 
   - 
   - 
@@ -44,6 +44,12 @@ TagManager:
   - name: Tiles
     uniqueID: 1457839183
     locked: 0
+  - name: FurnitureTiles
+    uniqueID: 3742343941
+    locked: 0
+  - name: Inventory
+    uniqueID: 232718201
+    locked: 0
   - name: Characters
     uniqueID: 432859555
     locked: 0
@@ -52,9 +58,6 @@ TagManager:
     locked: 0
   - name: Furniture
     uniqueID: 2008520717
-    locked: 0
-  - name: Inventory
-    uniqueID: 232718201
     locked: 0
   - name: InventoryUI
     uniqueID: 2286137135

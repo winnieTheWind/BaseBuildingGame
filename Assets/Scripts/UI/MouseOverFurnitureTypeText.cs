@@ -40,8 +40,9 @@ public class MouseOverFurnitureTypeText : MonoBehaviour
 
         if (t != null && t.furniture != null)
         {
-            s = t.furniture.Name;
-        } else
+            s = t.furniture.objectType;
+        }
+        else
         {
             s = "N/A";
         }

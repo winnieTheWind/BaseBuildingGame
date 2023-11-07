@@ -1,16 +1,11 @@
-//=======================================================================
-// Copyright Martin "quill18" Glaude 2015-2016.
-//		http://quill18.com
-//=======================================================================
-
 using UnityEngine;
 using System.Collections.Generic;
 using MoonSharp.Interpreter;
 
 [MoonSharpUserData]
+
 public class InventoryManager
 {
-
     // This is a list of all "live" inventories.
     // Later on this will likely be organized by rooms instead
     // of a single master list. (Or in addition to.)
@@ -34,18 +29,17 @@ public class InventoryManager
                 inv.tile.inventory = null;
                 inv.tile = null;
             }
+
             if (inv.character != null)
             {
                 inv.character.inventory = null;
                 inv.character = null;
             }
         }
-
     }
 
     public bool PlaceInventory(Tile tile, Inventory inv)
     {
-
         bool tileWasEmpty = tile.inventory == null;
 
         if (tile.PlaceInventory(inv) == false)
@@ -54,7 +48,7 @@ public class InventoryManager
             return false;
         }
 
-        CleanupInventory(inv);
+      CleanupInventory(inv);
 
         // We may also created a new stack on the tile, if the tile was previously empty.
         if (tileWasEmpty)
@@ -74,9 +68,10 @@ public class InventoryManager
 
     public bool PlaceInventory(Job job, Inventory inv)
     {
+
         if (job.inventoryRequirements.ContainsKey(inv.objectType) == false)
         {
-            Debug.LogError("Trying to add inventory to a job that it doesn't want.");
+            Debug.LogError("Trying to add inventory to a job that it doesnt want.");
             return false;
         }
 
@@ -86,8 +81,8 @@ public class InventoryManager
         {
             inv.stackSize = job.inventoryRequirements[inv.objectType].stackSize - job.inventoryRequirements[inv.objectType].maxStackSize;
             job.inventoryRequirements[inv.objectType].stackSize = job.inventoryRequirements[inv.objectType].maxStackSize;
-        }
-        else
+
+        } else
         {
             inv.stackSize = 0;
         }
@@ -97,13 +92,13 @@ public class InventoryManager
         return true;
     }
 
+
     public bool PlaceInventory(Character character, Inventory sourceInventory, int amount = -1)
     {
         if (amount < 0)
         {
             amount = sourceInventory.stackSize;
-        }
-        else
+        } else
         {
             amount = Mathf.Min(amount, sourceInventory.stackSize);
         }
@@ -113,7 +108,7 @@ public class InventoryManager
             character.inventory = sourceInventory.Clone();
             character.inventory.stackSize = 0;
             inventories[character.inventory.objectType].Add(character.inventory);
-        }
+        } 
         else if (character.inventory.objectType != sourceInventory.objectType)
         {
             Debug.LogError("Character is trying to pick up a mismatched inventory object type.");
@@ -126,24 +121,18 @@ public class InventoryManager
         {
             sourceInventory.stackSize = character.inventory.stackSize - character.inventory.maxStackSize;
             character.inventory.stackSize = character.inventory.maxStackSize;
+
         }
         else
         {
             sourceInventory.stackSize -= amount;
         }
 
+        // At this point, "inv" might be an empty stack if it was merged to another stack.
         CleanupInventory(sourceInventory);
-
         return true;
     }
 
-    /// <summary>
-    /// Gets the type of the closest inventory of.
-    /// </summary>
-    /// <returns>The closest inventory of type.</returns>
-    /// <param name="objectType">Object type.</param>
-    /// <param name="t">T.</param>
-    /// <param name="desiredAmount">Desired amount. If no stack has enough, it instead returns the largest</param>
     public Inventory GetClosestInventoryOfType(string objectType, Tile t, int desiredAmount, bool canTakeFromStockpile)
     {
         Path_AStar path = GetPathToClosestInventoryOfType(objectType, t, desiredAmount, canTakeFromStockpile);
@@ -163,6 +152,4 @@ public class InventoryManager
         return path;
 
     }
-
-
 }

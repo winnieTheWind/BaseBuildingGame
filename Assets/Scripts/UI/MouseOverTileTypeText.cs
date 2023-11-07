@@ -12,6 +12,8 @@ public class MouseOverTileTypeText : MonoBehaviour
 
     MouseController mouseController;
 
+    public TextMeshProUGUI costText;
+
     // Use this for initialization
     void Start()
     {
@@ -39,8 +41,17 @@ public class MouseOverTileTypeText : MonoBehaviour
 
         if (t != null)
         {
-            myText.text = "Tile Type: " + t.Type.ToString() + " Chunk: " + t.chunk.CenterX + " " + t.chunk.CenterZ;
-        } else
+            if (t.furniture != null && t.furniture.objectType == "Stockpile")
+            {
+                myText.text = "Tile Type: " + t.Type.ToString() + " " + t.X.ToString() + " " + t.Z.ToString() + " " + t.furniture.Bitmask;
+
+            } else
+            {
+                myText.text = "Tile Type: " + t.Type.ToString() + " " + t.X.ToString() + " " + t.Z.ToString() + " " + t.movementCost;
+
+            }
+        }
+        else
         {
             myText.text = "Tile Type: N/A";
         }

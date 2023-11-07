@@ -1,12 +1,7 @@
-using UnityEngine;
-using System;
-using System.Collections.Generic;
-using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
-using System.Xml.Serialization;
 using System.IO;
-using UnityEngine.UI;
-using TMPro;
+using System.Xml.Serialization;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class WorldController : MonoBehaviour
 {
@@ -58,7 +53,7 @@ public class WorldController : MonoBehaviour
             // TODO: Add pause/unpause, speed controls, etc
             world.Update(Time.deltaTime);
         }
-      
+
     }
 
     public Tile GetTileAtWorldCoord(Vector3 coord)
@@ -71,11 +66,7 @@ public class WorldController : MonoBehaviour
 
     public void NewWorld()
     {
-        Debug.Log("NewWorld button was clicked.");
-
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-
-
     }
 
     public string FileSaveBasePath()
@@ -97,7 +88,7 @@ public class WorldController : MonoBehaviour
     void CreateEmptyWorld()
     {
         // Create a world with Empty tiles
-        world = new World(20, 20);
+        world = new World(100, 100);
 
     }
 

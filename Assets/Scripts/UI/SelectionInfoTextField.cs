@@ -9,15 +9,14 @@ public class SelectionInfoTextField : MonoBehaviour
 
     MouseController mc;
     TextMeshProUGUI txt;
-    // Start is called before the first frame update
+
     void Start()
     {
         mc = FindObjectOfType<MouseController>();
-        txt = GetComponent<TextMeshProUGUI>(); 
+        txt = GetComponent<TextMeshProUGUI>();
 
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (mc.mySelection == null)
@@ -33,8 +32,8 @@ public class SelectionInfoTextField : MonoBehaviour
         canvasGroup.blocksRaycasts = true;
 
         ISelectableInterface actualSelection = mc.mySelection.stuffInTile[mc.mySelection.subSelection];
-        txt.text = actualSelection.GetName() + 
-            "\n" + actualSelection.GetDescription() + 
+        txt.text = actualSelection.GetName() +
+            "\n" + actualSelection.GetDescription() +
             "\n" + actualSelection.GetHitPointString() +
             "\n" + actualSelection.GetCharacterType();
     }

@@ -1,24 +1,19 @@
-using UnityEngine;
 using TMPro;
+using UnityEngine;
 
 public class MouseOverRoomIndexText : MonoBehaviour
 {
 
-    // Every frame, this script checks to see which tile
-    // is under the mouse and then updates the GetComponent<Text>.text
-    // parameter of the object it is attached to.
-
     TextMeshProUGUI myText;
     MouseController mouseController;
-
-    // Use this for initialization
+    // Start is called before the first frame update
     void Start()
     {
         myText = GetComponent<TextMeshProUGUI>();
 
         if (myText == null)
         {
-            Debug.LogError("MouseOverTileTypeText: No 'Text' UI component on this object.");
+            Debug.LogError("MouseOverRoomIndex: No 'TextMeshProUGUI' UI Component on this object");
             this.enabled = false;
             return;
         }
@@ -26,8 +21,7 @@ public class MouseOverRoomIndexText : MonoBehaviour
         mouseController = GameObject.FindObjectOfType<MouseController>();
         if (mouseController == null)
         {
-            Debug.LogError("How do we not have an instance of mouse controller?");
-            return;
+            Debug.LogError("How do we not have an instance of mouse controller.");
         }
     }
 
@@ -36,16 +30,9 @@ public class MouseOverRoomIndexText : MonoBehaviour
     {
         Tile t = mouseController.GetMouseOverTile();
 
-        string roomID = "N/A";
-
-        if (t != null && t.room != null)
+        if (myText != null && t != null)
         {
-            roomID = t.room.ID.ToString();
-        } else
-        {
-            roomID = "N/A";
+            myText.text = "Room Index: " + World.current.rooms.IndexOf(t.room).ToString();
         }
-
-        myText.text = "Room Index: " + roomID;
     }
 }

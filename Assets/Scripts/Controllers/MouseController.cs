@@ -3,8 +3,6 @@ using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
 using static Unity.Burst.Intrinsics.X86;
-using Unity.VisualScripting;
-using UnityEngine.TextCore.Text;
 
 public class MouseController : MonoBehaviour
 {
@@ -23,14 +21,11 @@ public class MouseController : MonoBehaviour
     BuildModeController bmc;
     FurnitureMeshController fmc;
 
-    public Camera OverlayCamera;
-
-
     bool isDragging = false;
 
     public Material TransparencyMaterial;
 
-    public enum MouseMode
+    enum MouseMode
     {
         SELECT,
         BUILD
@@ -59,7 +54,6 @@ public class MouseController : MonoBehaviour
         bmc = GameObject.FindAnyObjectByType<BuildModeController>();
         fmc = GameObject.FindAnyObjectByType<FurnitureMeshController>();
 
-
         dragPreviewGameObjects = new List<GameObject>();
     }
 
@@ -71,8 +65,8 @@ public class MouseController : MonoBehaviour
 
     public Tile GetMouseOverTile() {
         return WorldController.Instance.world.GetTileAt(
-            Mathf.FloorToInt(currFramePosition.x),
-            Mathf.FloorToInt(currFramePosition.z)
+            Mathf.FloorToInt(currFramePosition.x + 0.5f),
+            Mathf.FloorToInt(currFramePosition.z + 0.5f)
         );
     }
 
@@ -103,6 +97,7 @@ public class MouseController : MonoBehaviour
         UpdateDragging();
         UpdateCameraMovement();
         UpdateSelection();
+
 
         lastFramePosition = Camera.main.ScreenToWorldPoint(Mouse.current.position.ReadValue());  // Store the current position for next frame
         lastFramePosition.y = 0f;
@@ -229,7 +224,7 @@ public class MouseController : MonoBehaviour
                 // Object is on the InventoryUI sorting layer, ignore it
                 return;
             }
-            currFramePosition = new Vector3(currHit.point.x - 0.5f, currHit.point.y, currHit.point.z);
+            currFramePosition = new Vector3(currHit.point.x, currHit.point.y, currHit.point.z + 0.4f);
         }
 
         if (currentMode != MouseMode.BUILD)
@@ -253,7 +248,8 @@ public class MouseController : MonoBehaviour
                 dragStartPosition = currFramePosition;
                 isDragging = true;
             }
-        } else if (isDragging == false)
+        }
+        else if (isDragging == false)
         {
             dragStartPosition = currFramePosition;
         }
@@ -299,15 +295,16 @@ public class MouseController : MonoBehaviour
                     if (bmc.buildMode == BuildMode.FURNITURE)
                     {
                         ShowFurnitureObjectAtTile(bmc.buildModeObjectType, t);
-                    } else if (bmc.buildMode == BuildMode.SPAWNCHARACTER)
-                    {
-                        ShowCharacterObjectAtTile(bmc.buildModeObjectType, t);
                     }
+                    //else if (bmc.buildMode == BuildMode.SPAWNCHARACTER)
+                    //{
+                    //    ShowCharacterObjectAtTile(bmc.buildModeObjectType, t);
+                    //}
                     else
                     {
                         //Show the generic dragging visuals
                         // Display the building hint on top of this tile position
-                        GameObject go = SimplePool.Spawn(Cursor, new Vector3(x + 0.5f, 0, z + 0.5f), Quaternion.Euler(90, 0, 0));  // Changed from y to z
+                        GameObject go = SimplePool.Spawn(Cursor, new Vector3(x, 0, z), Quaternion.Euler(90, 0, 0));  // Changed from y to z
                         go.transform.SetParent(this.transform, true);
                         dragPreviewGameObjects.Add(go);
                     }
@@ -325,7 +322,7 @@ public class MouseController : MonoBehaviour
                 for (int z = start_z; z <= end_z; z++)
                 {  // Changed from y to z
                     Tile t = WorldController.Instance.world.GetTileAt(x, z);  // Changed from y to z
-                   
+
                     if (t != null)
                     {
                         bmc.DoBuild(t);
@@ -335,44 +332,29 @@ public class MouseController : MonoBehaviour
         }
     }
 
-    void ShowCharacterObjectAtTile(string characterType, Tile t)
+    void ShowLayerFloorAtTile(string layerFloorType, Tile t)
     {
+        Debug.Log("ShowLayerFloorAtTile");
         GameObject go = new GameObject();
         go.transform.SetParent(this.transform, true);
+        go.transform.rotation = Quaternion.Euler(90, 0, 0);
         dragPreviewGameObjects.Add(go);
-        go.name = "Character";
 
         SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = SpriteManager.current.GetSprite("Characters", characterType);
+        sr.sprite = fmc.GetSpriteForFurniture(layerFloorType);
         sr.color = new Color(0.5f, 1f, 0.5f, 0.25f);
-        sr.sortingLayerName = "Characters";
+        sr.sortingLayerName = "Jobs";
 
-        Character proto = World.current.characterPrototypes[characterType];
-        go.transform.rotation = Quaternion.Euler(0, 0, 0);
-        go.transform.position = new Vector3(t.X + ((proto.Width - 0.5f) / 1f), 0.904f, t.Z + ((proto.Height - 0.5f) / 1f));
-        go.transform.localScale = new Vector3(1, 1, 1);
-        go.AddComponent<BillboardController>();
+        LayerTile proto = World.current.layerTilePrototypes[layerFloorType];
+        go.transform.position = new Vector3(t.X + ((proto.Width - 1) / 2f), 0, t.Z + ((proto.Height - 1) / 2f));
 
-        if (WorldController.Instance.world.IsCharacterPlacementValid(characterType, t))
-        {
-            go.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 0.5f);
-        }
-        else
-        {
-            go.GetComponent<SpriteRenderer>().material.color = new Color(1f, 0.5f, 0.5f, 1f);
-        }
-
-        go.transform.rotation = Quaternion.Euler(90, 0, 0);
     }
 
     void ShowFurnitureObjectAtTile(string furnitureType, Tile t)
     {
-        Furniture furn = World.current.furniturePrototypes[furnitureType];
-
-        if (furn.Is3D)
+        if (World.current.GetFurniturePrototype(furnitureType).Is3D)
         {
-            GameObject initialObject = fmc.GetGameObjectForFurniture(furnitureType);
-            GameObject go = Instantiate(initialObject, Vector3.zero, Quaternion.Euler(0, 0, 0));
+            GameObject go = Instantiate(fmc.GetGameObjectForFurniture(furnitureType), Vector3.zero, Quaternion.Euler(0, 0, 0));
             go.transform.SetParent(this.transform, true);
             dragPreviewGameObjects.Add(go);
 
@@ -381,15 +363,11 @@ public class MouseController : MonoBehaviour
 
             // Get MeshRenderer component to the GameObject
             // Optionally, you might want to set the material of the MeshRenderer
-            meshRenderer.material = TransparencyMaterial;
+            meshRenderer.material = MaterialManager.Instance.GetMaterial(furnitureType + "TransparentMaterial");
             Furniture proto = World.current.furniturePrototypes[furnitureType];
-            go.transform.position = new Vector3(t.X + ((proto.Width + 1) / 2f), 0, t.Z + ((proto.Height + 1) / 2f));
-            go.name = furnitureType.ToString() + "_" + t.X + "_" + t.Z;
 
-            if (furn.objectType == "Door")
-            {
-                go.transform.position = new Vector3(t.X + ((proto.Width - 1) / 2f), 0, t.Z + ((proto.Height - 1) / 2f));
-            }
+            go.name = furnitureType.ToString() + "_" + t.X + "_" + t.Z;
+            go.transform.position = new Vector3(t.X + ((proto.Width - 1) / 2f), 0, t.Z + ((proto.Height - 1) / 2f));
 
             if (WorldController.Instance.world.IsFurniturePlacementValid(furnitureType, t))
             {
@@ -399,10 +377,24 @@ public class MouseController : MonoBehaviour
             {
                 go.GetComponent<MeshRenderer>().material.color = new Color(1f, 0.5f, 0.5f, 0.5f);
             }
+
+            //This hardcoding is not ideal!
+            if (furnitureType == "Door")
+            {
+                Tile northTile = World.current.GetTileAt(t.X, t.Z + 1);
+                Tile southTile = World.current.GetTileAt(t.X, t.Z - 1);
+
+                if (northTile != null && southTile != null && northTile.furniture != null && southTile.furniture != null &&
+                    northTile.furniture.objectType == "Wall" && southTile.furniture.objectType == "Wall")
+                {
+                    go.transform.rotation = Quaternion.Euler(0, 90, 0);
+                }
+            }
         }
         else {
             GameObject go = new GameObject();
             go.transform.SetParent(this.transform, true);
+            go.transform.rotation = Quaternion.Euler(90, 0, 0);
             dragPreviewGameObjects.Add(go);
 
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
@@ -411,8 +403,7 @@ public class MouseController : MonoBehaviour
             sr.sortingLayerName = "Jobs";
 
             Furniture proto = World.current.furniturePrototypes[furnitureType];
-            go.transform.rotation = Quaternion.Euler(90, 0, 0);
-            go.transform.position = new Vector3(t.X + ((proto.Width) / 2f), 0, t.Z + ((proto.Height) / 2f));
+            go.transform.position = new Vector3(t.X + ((proto.Width - 1) / 2f), 0, t.Z + ((proto.Height - 1) / 2f));
 
             if (WorldController.Instance.world.IsFurniturePlacementValid(furnitureType, t))
             {
@@ -437,7 +428,6 @@ public class MouseController : MonoBehaviour
             pan = panAction.ReadValue<Vector2>();
             Vector3 panMovement = new Vector3(-pan.x, 0, -pan.y) * Time.deltaTime * panSpeed;
             Camera.main.transform.position += panMovement;
-            OverlayCamera.transform.position += panMovement;
         }
 
         // Update lastFramePosition here for more accurate movement

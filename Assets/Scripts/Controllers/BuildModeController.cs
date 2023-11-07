@@ -1,14 +1,9 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
-using System.Collections.Generic;
-using UnityEngine.EventSystems;
-using UnityEditor.Experimental.GraphView;
-using System;
 
 public enum BuildMode
 {
-    SPAWNCHARACTER,
     FLOOR,
+    LAYERFLOOR,
     FURNITURE,
     DESCONSTRUCT
 }
@@ -23,27 +18,20 @@ public class BuildModeController : MonoBehaviour
 
     FurnitureMeshController fmc;
 
-    public string TileFileName = "";
-
-    public static Action<BuildModeController> sendBuildModeController;
+    public string TileName = "";
 
     private void Start()
     {
         fmc = GameObject.FindObjectOfType<FurnitureMeshController>();
-        sendBuildModeController?.Invoke(this);
     }
 
     public bool IsObjectDraggable()
     {
-        if (buildMode == BuildMode.FLOOR || buildMode == BuildMode.DESCONSTRUCT)
+        if (buildMode == BuildMode.FLOOR || buildMode == BuildMode.DESCONSTRUCT ||
+            buildMode == BuildMode.LAYERFLOOR)
         {
             // floors are draggable
             return true;
-        }
-
-        if (buildMode == BuildMode.SPAWNCHARACTER)
-        {
-            return false;
         }
 
         Furniture proto = WorldController.Instance.world.furniturePrototypes[buildModeObjectType];
@@ -53,8 +41,6 @@ public class BuildModeController : MonoBehaviour
     public void DoPathfindingTest()
     {
         WorldController.Instance.world.SetupPathfindingExample();
-
-
     }
 
     public void SetMode_BuildFloor(TileType type)
@@ -65,10 +51,11 @@ public class BuildModeController : MonoBehaviour
         GameObject.FindObjectOfType<MouseController>().StartBuildMode();
     }
 
-    public void SetMode_BuildFloor()
+    public void SetMode_BuildLayerFloor(TileType type)
     {
-        buildMode = BuildMode.FLOOR;
-        buildModeTile = TileType.Grass;
+
+        buildMode = BuildMode.LAYERFLOOR;
+        buildModeTile = type;
 
         GameObject.FindObjectOfType<MouseController>().StartBuildMode();
     }
@@ -90,14 +77,6 @@ public class BuildModeController : MonoBehaviour
         GameObject.FindObjectOfType<MouseController>().StartBuildMode();
     }
 
-    public void SetMode_SpawnCharacter(string objectType)
-    {
-        buildMode = BuildMode.SPAWNCHARACTER;
-        buildModeObjectType = objectType;
-
-        //Debug.Log("SetMode_SpawnCharacter -- " + buildModeObjectType);
-        GameObject.FindObjectOfType<MouseController>().StartBuildMode();
-    }
 
     public void SetMode_Deconstruct(string objectType)
     {
@@ -116,11 +95,8 @@ public class BuildModeController : MonoBehaviour
                 WorldController.Instance.world.PlaceFurniture(buildModeObjectType, t);
                 return; // Exit early to prevent further processing
             }
-
             // Create the Furniture and assign it to the tile
             // FIXME: This instantly builds the furniture
-            //WorldController.Instance.world.PlaceFurniture();
-
             // Can we build the furniture in the selected tile?
             // Run the ValidPlacement function!
             string furnitureType = buildModeObjectType;
@@ -139,10 +115,11 @@ public class BuildModeController : MonoBehaviour
                     // Make a clone
                     j = WorldController.Instance.world.furnitureJobPrototypes[furnitureType].Clone();
                     j.tile = t;
+                    j.Is3d = true;
                 } else
                 {
                     //Debug.LogError("There is no furniture job prototype for " + furnitureType);
-                    j = new Job(t, furnitureType, FurnitureActions.JobComplete_FurnitureBuilding, 0.1f, null);
+                    j = new Job(t, furnitureType, FurnitureActions.JobComplete_FurnitureBuilding, 0.1f, null, true, false);
                 }
 
                 j.furniturePrototype = WorldController.Instance.world.furniturePrototypes[furnitureType];
@@ -153,13 +130,44 @@ public class BuildModeController : MonoBehaviour
                 j.RegisterJobStoppedCallback((theJob) => { theJob.tile.pendingFurnitureJob = null; });
 
                 WorldController.Instance.world.jobQueue.Enqueue(j);
+                //Debug.Log("Job Queue Size: " + WorldController.Instance.world.jobQueue.Count);
             }
         }
         else if (buildMode == BuildMode.FLOOR)
         {
-            // We are in tile-changing mode
-            t.Type = buildModeTile;
-        } else if (buildMode == BuildMode.DESCONSTRUCT)
+            if (WorldController.Instance.world.currentUserState == World.UserState.FREE_EDIT)
+            {
+                if (t.LayerTile != null)
+                {
+                    t.LayerTile.Deconstruct();
+                }
+                t.Type = buildModeTile;
+                return; // Exit early to prevent further processing
+            }
+
+            if (t.pendingTileJob == null)
+            {
+                // If the tile change is valid, proceed with creating and queueing the job.
+                Job tileJob = new Job(
+                    t,
+                    buildModeTile, // Assuming you use the tile type as the jobObjectType.
+                    cbTileJobCallback,
+                    1f, // Assume it takes 1 time unit to perform this job, adjust as needed.
+                    null,
+                    false,
+                    false
+                );
+                tileJob.isRenderingTile = true;
+
+                t.pendingTileJob = tileJob;
+
+                // Enqueue the job in your job system.
+                WorldController.Instance.world.jobQueue.Enqueue(tileJob);
+            }
+
+        
+        }
+        else if (buildMode == BuildMode.DESCONSTRUCT)
         {
             // TODO:
             if (t.furniture != null)
@@ -167,14 +175,17 @@ public class BuildModeController : MonoBehaviour
                 t.furniture.Deconstruct();
             }
         }
-        else if (buildMode == BuildMode.SPAWNCHARACTER)
+        else if (buildMode == BuildMode.LAYERFLOOR)
         {
-            string charType = buildModeObjectType;
-
-            Character c = WorldController.Instance.world.characterPrototypes[charType].Clone();
-            c.tile = t;
-
-            WorldController.Instance.world.CreateCharacter(WorldController.Instance.world.GetTileAt(c.tile.X, c.tile.Z));
+            if(WorldController.Instance.world.currentUserState == World.UserState.FREE_EDIT)
+            {
+                if (t.LayerTile == null)
+                {
+                    // Place furniture immediately without creating jobs
+                    WorldController.Instance.world.PlaceLayerTile(buildModeTile.ToString(), t);
+                    return; // Exit early to prevent further processing
+                }
+            }
         }
         else
         {
@@ -182,11 +193,11 @@ public class BuildModeController : MonoBehaviour
         }
 
     }
+
+    void cbTileJobCallback(Job j)
+    {
+        j.tile.Type = j.tileType;
+    }
+
 }
 
-// Okay only one mesh is spawning, and is moving with the mouse.
-// However, you can also choose which type of mesh you wish to spawn.
-// When I press the Build Oxygen Generator button, after pressing
-// the Build Wall button, I need it to destroy the current preview
-// object and instantiate the new preview mesh when switch
-// to a different selection of mesh.
