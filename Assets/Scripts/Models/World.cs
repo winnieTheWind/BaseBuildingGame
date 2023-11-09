@@ -167,17 +167,28 @@ public class World : IXmlSerializable
         furnitureJobPrototypes = new Dictionary<string, Job>();
         layerTilePrototypes = new Dictionary<string, LayerTile>();
 
-        furniturePrototypes.Add("Wall",
-           new Furniture(
-               "Wall",
-               0,  // Impassable
-               1,  // Width
-               1,  // Height
-               false, // Links to neighbours and "sort of" becomes part of a large object
-               true, // Enclose rooms
-               true
-           )
-       );
+        layerTilePrototypes.Add("Dirt", new LayerTile(1, 1, "Dirt", true));
+        layerTilePrototypes.Add("Stockpile", new LayerTile(1, 1, "Stockpile", true));
+
+        var furniturePrototypesTest = PrototypeFactory.GetPrototypes<FurniturePrototype>("furniture_prototypes");
+
+        foreach (var kvp in furniturePrototypesTest)
+        {
+            var proto = kvp.Value;
+
+            // Create the Furniture instance using the prototype data.
+            furniturePrototypes.Add(proto.Type,
+                new Furniture(
+                    proto.Type,
+                    proto.PathfindingCost, // This will be in FurniturePrototype, replace with appropriate property
+                    proto.Width,
+                    proto.Height,
+                    proto.LinksToNeighbours,
+                    proto.EnclosesRooms,
+                    proto.Is3D
+            ));
+        }
+
         furnitureJobPrototypes.Add("Wall",
             new Job(null,
                 "Wall",
@@ -187,21 +198,6 @@ public class World : IXmlSerializable
             )
         );
 
-        layerTilePrototypes.Add("Dirt", new LayerTile(1, 1, "Dirt", true));
-        layerTilePrototypes.Add("Stockpile", new LayerTile(1, 1, "Stockpile", true));
-
-
-        furniturePrototypes.Add("Desk",
-            new Furniture(
-                "Desk",
-                0,  // Impassable
-                1,  // Width
-                1,  // Height
-                false, // Links to neighbours and "sort of" becomes part of a large object
-                false, // Enclose rooms
-                true
-            )
-        );
         furnitureJobPrototypes.Add("Desk",
             new Job(null,
                 "Desk",
@@ -211,17 +207,6 @@ public class World : IXmlSerializable
             )
         );
 
-        furniturePrototypes.Add("Round_Table",
-            new Furniture(
-                "Round_Table",
-                0,  // Impassable
-                1,  // Width
-                1,  // Height
-                false, // Links to neighbours and "sort of" becomes part of a large object
-                false, // Enclose rooms
-                true
-            )
-        );
         furnitureJobPrototypes.Add("Round_Table",
             new Job(null,
                 "Round_Table",
@@ -231,39 +216,12 @@ public class World : IXmlSerializable
             )
         );
 
-        furniturePrototypes.Add("Door",
-            new Furniture(
-                "Door",
-                1,  // Door pathfinding cost
-                1,  // Width
-                1,  // Height
-                false, // Links to neighbours and "sort of" becomes part of a large object
-                true,  // Enclose rooms
-                true
-            )
-        );
-
-        // What if the object behaviours were scriptable? And therefore were part of the text file
-        // we are reading in now?
-
         furniturePrototypes["Door"].SetParameter("openness", 0);
         furniturePrototypes["Door"].SetParameter("is_opening", 0);
         furniturePrototypes["Door"].RegisterUpdateAction(FurnitureActions.Door_UpdateAction);
 
         furniturePrototypes["Door"].IsEnterable = FurnitureActions.Door_IsEnterable;
 
-
-        furniturePrototypes.Add("Stockpile",
-            new Furniture(
-                "Stockpile",
-                1,  // Impassable
-                1,  // Width
-                1,  // Height
-                true, // Links to neighbours and "sort of" becomes part of a large object
-                false,  // Enclose rooms
-                false
-            )
-        );
         furniturePrototypes["Stockpile"].RegisterUpdateAction(FurnitureActions.Stockpile_UpdateAction);
         furniturePrototypes["Stockpile"].tint = new Color32(186, 31, 31, 255);
         furnitureJobPrototypes.Add("Stockpile",
@@ -278,37 +236,10 @@ public class World : IXmlSerializable
             )
         );
 
-
-
-        furniturePrototypes.Add("Oxygen_Generator",
-            new Furniture(
-                "Oxygen_Generator",
-                10, // Door pathfinding cost
-                2,  // Width
-                2,  // Height
-                false, // Links to neighbours and "sort of" becomes part of a large object
-                false, // Enclose rooms
-                true
-            )
-        );
         furniturePrototypes["Oxygen_Generator"].RegisterUpdateAction(FurnitureActions.OxygenGenerator_UpdateAction);
 
-
-        furniturePrototypes.Add("Mining_Drone_Station",
-            new Furniture(
-                "Mining_Drone_Station",
-                0, // pathfinding cost
-                3,  // Width
-                3,  // Height
-                false, // Links to neighbours and "sort of" becomes part of a large object
-                false,
-                true
-            )
-        );
         furniturePrototypes["Mining_Drone_Station"].jobSpotOffset = new Vector3(1, 0, 0);
         furniturePrototypes["Mining_Drone_Station"].RegisterUpdateAction(FurnitureActions.MiningDroneStation_UpdateAction);
-
-
     }
 
     /// A function for testing out the system
@@ -343,7 +274,7 @@ public class World : IXmlSerializable
         {
             for (int y = b - 5; y < b + 15; y++)
             {
-                //tiles[x, y].Type = TileType.Grass;
+                tiles[x, y].Type = TileType.Grass;
                 if (x == l || x == (l + 9) || y == b || y == (b + 9))
                 {
                     if (x != (l + 9) && y != (b + 4))

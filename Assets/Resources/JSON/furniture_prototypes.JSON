@@ -1,0 +1,67 @@
+{
+  "furniture_prototypes": [
+    {
+      "type": "Wall",
+      "pathfindingCost": 0,
+      "width": 1,
+      "height": 1,
+      "linksToNeighbours": "false",
+      "enclosesRooms": "true",
+      "is3D":  "true"
+    },
+    {
+      "type": "Desk",
+      "pathfindingCost": 0,
+      "width": 1,
+      "height": 1,
+      "linksToNeighbours": "false",
+      "enclosesRooms": "true",
+      "is3D": "true"
+    },
+    {
+      "type": "Mining_Drone_Station",
+      "pathfindingCost": 0,
+      "width": 3,
+      "height": 3,
+      "linksToNeighbours": "false",
+      "enclosesRooms": "false",
+      "is3D": "true"
+    },
+    {
+      "type": "Oxygen_Generator",
+      "pathfindingCost": 10,
+      "width": 2,
+      "height": 2,
+      "linksToNeighbours": "false",
+      "enclosesRooms": "false",
+      "is3D": "true"
+    },
+    {
+      "type": "Stockpile",
+      "pathfindingCost": 1,
+      "width": 1,
+      "height": 1,
+      "linksToNeighbours": "true",
+      "enclosesRooms": "false",
+      "is3D": "false"
+    },
+    {
+      "type": "Door",
+      "pathfindingCost": 1,
+      "width": 1,
+      "height": 1,
+      "linksToNeighbours": "false",
+      "enclosesRooms": "true",
+      "is3D": "true"
+    },
+    {
+      "type": "Round_Table",
+      "pathfindingCost": 0,
+      "width": 1,
+      "height": 1,
+      "linksToNeighbours": "false",
+      "enclosesRooms": "false",
+      "is3D": "true"
+    }
+  ]
+}

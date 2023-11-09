@@ -1,0 +1,13 @@
+{
+  "job_furniture_prototypes": [
+    {
+      "type": "Wall",
+      "jobTile": 10,
+      "width": 1,
+      "height": 1,
+      "linksToNeighbours": false,
+      "enclosesRooms": true,
+      "is3D": true
+    }
+  ]
+}
