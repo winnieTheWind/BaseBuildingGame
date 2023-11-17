@@ -28,6 +28,7 @@ public class World : IXmlSerializable
     public Dictionary<string, Job> furnitureJobPrototypes;
     public Dictionary<string, LayerTile> layerTilePrototypes;
     public Dictionary<string, Job> tileJobPrototypes;
+    public Dictionary<string, Character> characterPrototypes;
 
     // The tile width of the world.
     public int Width { get; protected set; }
@@ -50,8 +51,8 @@ public class World : IXmlSerializable
     // For now, this is just a PUBLIC member of World
     public JobQueue jobQueue;
 
-    private float CameraPosX;
-    private float CameraPosZ;
+    public Vector3 CameraPosition;
+    public Quaternion CameraRotation;
 
     static public World current { get; protected set; }
 
@@ -70,7 +71,7 @@ public class World : IXmlSerializable
         SetupWorld(width, height);
 
         // Make one character
-        CreateCharacter(GetTileAt(Width / 2, Height / 2));
+        //CreateCharacter(GetTileAt(Width / 2, Height / 2));
 
         currentUserState = UserState.GAME;
     }
@@ -123,7 +124,7 @@ public class World : IXmlSerializable
             {
                 tiles[x, y] = new Tile(x, y);
                 tiles[x, y].RegisterTileTypeChangedCallback(OnTileChanged);
-                tiles[x, y].room = GetOutsideRoom();
+                tiles[x, y].Room = GetOutsideRoom();
             }
         }
 
@@ -135,6 +136,7 @@ public class World : IXmlSerializable
         furnitures = new List<Furniture>();
         inventoryManager = new InventoryManager();
         layerTiles = new List<LayerTile>();
+
     }
 
     public void Update(float deltaTime)
@@ -150,10 +152,14 @@ public class World : IXmlSerializable
         }
     }
 
-    public Character CreateCharacter(Tile t)
+    public Character CreateCharacter(Tile t, string type)
     {
         Character c = new Character(t);
+        c.Type = type;
+
         characters.Add(c);
+
+        Debug.Log("Created " + type);
 
         if (cbCharacterCreated != null)
             cbCharacterCreated(c);
@@ -166,13 +172,21 @@ public class World : IXmlSerializable
         furniturePrototypes = new Dictionary<string, Furniture>();
         furnitureJobPrototypes = new Dictionary<string, Job>();
         layerTilePrototypes = new Dictionary<string, LayerTile>();
+        characterPrototypes = new Dictionary<string, Character>();
 
-        layerTilePrototypes.Add("Dirt", new LayerTile(1, 1, "Dirt", true));
-        layerTilePrototypes.Add("Stockpile", new LayerTile(1, 1, "Stockpile", true));
+        var _characterPrototypes = PrototypeFactory.GetPrototypes<CharacterPrototype>("character_prototypes", "prototypes");
+        var _furniturePrototypes = PrototypeFactory.GetPrototypes<FurniturePrototype>("furniture_prototypes", "prototypes");
+        var _jobfurniturePrototypes = PrototypeFactory.GetPrototypes<JobFurniturePrototype>("job_furniture_prototypes", "prototypes");
 
-        var furniturePrototypesTest = PrototypeFactory.GetPrototypes<FurniturePrototype>("furniture_prototypes");
+        foreach (var kvp in _characterPrototypes)
+        {
+            var proto = kvp.Value;
 
-        foreach (var kvp in furniturePrototypesTest)
+            // Create the Furniture instance using the prototype data.
+            characterPrototypes.Add(proto.Type, new Character(proto.Type));
+        }
+
+        foreach (var kvp in _furniturePrototypes)
         {
             var proto = kvp.Value;
 
@@ -185,81 +199,51 @@ public class World : IXmlSerializable
                     proto.Height,
                     proto.LinksToNeighbours,
                     proto.EnclosesRooms,
-                    proto.Is3D
+                    proto.Is3D,
+                    proto.FloorHeight
             ));
         }
 
-        furnitureJobPrototypes.Add("Wall",
-            new Job(null,
-                "Wall",
-                FurnitureActions.JobComplete_FurnitureBuilding, 1f,
-                new Inventory[] { new Inventory("Steel_Plate", 5, 0) },
-                false
-            )
-        );
+        foreach (var kvp in _jobfurniturePrototypes)
+        {
+            var proto = kvp.Value;
 
-        furnitureJobPrototypes.Add("Desk",
-            new Job(null,
-                "Desk",
-                FurnitureActions.JobComplete_FurnitureBuilding, 1f,
-                null,
-                false
-            )
-        );
+            Action<Job> jobCompleteCallback = FurnitureActions.JobComplete_FurnitureBuilding; // Placeholder for the actual callback.
 
-        furnitureJobPrototypes.Add("Round_Table",
-            new Job(null,
-                "Round_Table",
-                FurnitureActions.JobComplete_FurnitureBuilding, 1f,
-                null,
-                false
-            )
-        );
+            Inventory[] inventoryArray = null;
+            if (proto.MaterialForBuild != "")
+            {
+                inventoryArray = new Inventory[] { new Inventory(proto.MaterialForBuild, 5, 0) };
+            }
+
+            Job job = new Job(
+                null, // Tile will be set when the job is instantiated in the game world.
+                proto.Type, // This is the type of object, e.g., "Wall".
+                jobCompleteCallback, // This callback needs to be defined somewhere in your code.
+                proto.JobTime, // Time to complete the job.
+                inventoryArray, // The required materials for the job.
+                proto.Is3D, // Whether the job is for a 3D object.
+                proto.JobRepeats// Other parameters, such as jobRepeats, would need default values or additional data in your JSON.
+            );
+
+            furnitureJobPrototypes.Add(proto.Type, job);
+        }
+
+        layerTilePrototypes.Add("Dirt", new LayerTile(1, 1, "Dirt", true));
+        layerTilePrototypes.Add("Stockpile", new LayerTile(1, 1, "Stockpile", true));
 
         furniturePrototypes["Door"].SetParameter("openness", 0);
         furniturePrototypes["Door"].SetParameter("is_opening", 0);
         furniturePrototypes["Door"].RegisterUpdateAction(FurnitureActions.Door_UpdateAction);
-
         furniturePrototypes["Door"].IsEnterable = FurnitureActions.Door_IsEnterable;
-
         furniturePrototypes["Stockpile"].RegisterUpdateAction(FurnitureActions.Stockpile_UpdateAction);
-        furniturePrototypes["Stockpile"].tint = new Color32(186, 31, 31, 255);
-        furnitureJobPrototypes.Add("Stockpile",
-            new Job(
-                null,
-                "Stockpile",
-                FurnitureActions.JobComplete_FurnitureBuilding,
-                -1,
-                null,
-                false,
-                false
-            )
-        );
-
+        furniturePrototypes["Stockpile"].Tint = new Color32(186, 31, 31, 255);
+        furniturePrototypes["Mining_Drone_Station"].JobSpotOffset = new Vector3(1, 0, 0);
+        furniturePrototypes["Mining_Drone_Station"].RegisterUpdateAction(FurnitureActions.MiningDroneStation_UpdateAction);
         furniturePrototypes["Oxygen_Generator"].RegisterUpdateAction(FurnitureActions.OxygenGenerator_UpdateAction);
 
-        furniturePrototypes["Mining_Drone_Station"].jobSpotOffset = new Vector3(1, 0, 0);
-        furniturePrototypes["Mining_Drone_Station"].RegisterUpdateAction(FurnitureActions.MiningDroneStation_UpdateAction);
-    }
-
-    /// A function for testing out the system
-    public void RandomizeTiles()
-    {
-        Debug.Log("RandomizeTiles");
-        for (int x = 0; x < Width; x++)
-        {
-            for (int y = 0; y < Height; y++)
-            {
-                if (UnityEngine.Random.Range(0, 2) == 0)
-                {
-                    tiles[x, y].Type = TileType.Empty;
-                }
-                else
-                {
-                    tiles[x, y].Type = TileType.Grass;
-                }
-            }
-        }
+        furniturePrototypes["CashRegister"].RegisterUpdateAction(FurnitureActions.CashRegister_UpdateAction);
+        furniturePrototypes["CashRegister"].JobSpotOffset = new Vector3(0, 0, 1);
     }
 
     public void SetupPathfindingExample()
@@ -279,7 +263,7 @@ public class World : IXmlSerializable
                 {
                     if (x != (l + 9) && y != (b + 4))
                     {
-                        PlaceFurniture("Wall", tiles[x, y]);
+                        PlaceFurniture("Ceiling", tiles[x, y]);
                     }
                 }
             }
@@ -304,11 +288,12 @@ public class World : IXmlSerializable
             return null;
         }
 
-        Furniture furn = Furniture.PlaceInstance(furniturePrototypes[objectType], t);
+        Furniture furn;
+        furn = Furniture.PlaceInstance(furniturePrototypes[objectType], t);
 
         if (furn == null)
         {
-            // Failed to place object -- most likely there was already something there.
+                // Failed to place object -- most likely there was already something there.
             return null;
         }
 
@@ -316,21 +301,21 @@ public class World : IXmlSerializable
         furnitures.Add(furn);
 
         // Do we need to recalculate our rooms?
-        if (doRoomFloodFill && furn.roomEnclosure)
+        if (doRoomFloodFill && furn.RoomEnclosure)
         {
-            Room.DoRoomFloodFill(furn.tile, false);
+            Room.DoRoomFloodFill(furn.Tile, false);
         }
 
         if (cbFurnitureCreated != null)
         {
             cbFurnitureCreated(furn);
-            if (furn.movementCost != 1)
+            if (furn.MovementCost != 1)
             {
-                // since tiles return movement cost as their base cost multiplied
-                // by the furnitures movement cose, a furniture movement cost
-                // of exactly 1 doesnt impact oour pathfinding system so we can
-                // occasionally avoid invalidating pathfinding graphs..f
-                InvalidateTileGraph(); // Reset the pathfinding system
+            // since tiles return movement cost as their base cost multiplied
+             // by the furnitures movement cose, a furniture movement cost
+            // of exactly 1 doesnt impact oour pathfinding system so we can
+            // occasionally avoid invalidating pathfinding graphs..f
+            InvalidateTileGraph(); // Reset the pathfinding system
             }
         }
 
@@ -349,6 +334,12 @@ public class World : IXmlSerializable
         LayerTile layerTile = LayerTile.PlaceInstance(layerTilePrototypes[type], t);
 
         if (layerTile == null)
+        {
+            // Failed to place layer tile -- most likely there was already something there.
+            return null;
+        }
+
+        if (t.Furniture != null)
         {
             // Failed to place layer tile -- most likely there was already something there.
             return null;
@@ -488,9 +479,6 @@ public class World : IXmlSerializable
         writer.WriteAttributeString("Width", Width.ToString());
         writer.WriteAttributeString("Height", Height.ToString());
 
-        writer.WriteAttributeString("CameraPosX", Camera.main.transform.position.x.ToString());
-        writer.WriteAttributeString("CameraPosZ", Camera.main.transform.position.z.ToString());
-
         writer.WriteStartElement("Tiles");
         for (int x = 0; x < Width; x++)
         {
@@ -531,7 +519,7 @@ public class World : IXmlSerializable
         {
             for (int z = 0; z < Height; z++)
             {
-                if (tiles[x, z].inventory != null) // Assuming tiles have an 'Inventory' property
+                if (tiles[x, z].Inventory != null) // Assuming tiles have an 'Inventory' property
                 {
                     writer.WriteStartElement("Inventory");
 
@@ -540,14 +528,13 @@ public class World : IXmlSerializable
                     writer.WriteAttributeString("Z", z.ToString());
 
                     // Serialize the actual Inventory data
-                    tiles[x, z].inventory.WriteXml(writer);
+                    tiles[x, z].Inventory.WriteXml(writer);
 
                     writer.WriteEndElement();
                 }
             }
         }
         writer.WriteEndElement();
-
 
         writer.WriteStartElement("Characters");
         foreach (Character c in characters)
@@ -567,9 +554,6 @@ public class World : IXmlSerializable
         Height = int.Parse(reader.GetAttribute("Height"));
 
         SetupWorld(Width, Height);
-
-        // Set the camera to the saved positions
-        Camera.main.transform.position = new Vector3(float.Parse(reader.GetAttribute("CameraPosX")), 9, float.Parse(reader.GetAttribute("CameraPosZ")));
 
         while (reader.Read())
         {
@@ -592,36 +576,12 @@ public class World : IXmlSerializable
                     break;
             }
         }
-
-        // DEBUGGING ONLY!  REMOVE ME LATER!
-        // Create an Inventory Item
-        //CreateInventoryItem(0, 0, "Steel_Plate", 150, 150);
-        //CreateInventoryItem(2, 0, "Steel_Plate", 150, 150);
-        //CreateInventoryItem(1, 2, "Steel_Plate", 150, 150);
-        //CreateInventoryItem(2, 2, "Steel_Plate", 150, 150);
-        //CreateInventoryItem(3, 2, "Steel_Plate", 150, 150);
-        //CreateInventoryItem(4, 2, "Steel_Plate", 150, 150);
-       
-    }
-
-    void CreateInventoryItem(int x, int z, string key, int maxSize, int currentSize)
-    {
-        Inventory inv = new Inventory(key, maxSize, currentSize);
-
-        Tile t = GetTileAt(Width / 2 + x, Height / 2 + z);
-        inventoryManager.PlaceInventory(t, inv);
-
-        if (cbInventoryCreated != null)
-        {
-            cbInventoryCreated(t.inventory);
-        }
     }
 
     void ReadXml_Tiles(XmlReader reader)
     {
         // We are in the "Tiles" element, so read elements until
         // we run out of "Tile" nodes.
-
         if (reader.ReadToDescendant("Tile")) 
         {
             do {
@@ -663,7 +623,7 @@ public class World : IXmlSerializable
 
             foreach (Furniture furn in furnitures)
             {
-                Room.DoRoomFloodFill(furn.tile, true);
+                Room.DoRoomFloodFill(furn.Tile, true);
             }
         }
     }
@@ -710,7 +670,11 @@ public class World : IXmlSerializable
                 int x = int.Parse(reader.GetAttribute("X"));
                 int z = int.Parse(reader.GetAttribute("Z"));
 
-                Character c = CreateCharacter(tiles[x, z]);
+                string filename = reader.GetAttribute("Filename");
+                string name = reader.GetAttribute("Name");
+
+
+                Character c = CreateCharacter(tiles[x, z], name);
                 c.ReadXml(reader);
             } while (reader.ReadToNextSibling("Character"));
         }

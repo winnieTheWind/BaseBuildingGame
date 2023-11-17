@@ -26,13 +26,13 @@ public class InventoryManager
             }
             if (inv.tile != null)
             {
-                inv.tile.inventory = null;
+                inv.tile.Inventory = null;
                 inv.tile = null;
             }
 
             if (inv.character != null)
             {
-                inv.character.inventory = null;
+                inv.character.Inventory = null;
                 inv.character = null;
             }
         }
@@ -40,7 +40,7 @@ public class InventoryManager
 
     public bool PlaceInventory(Tile tile, Inventory inv)
     {
-        bool tileWasEmpty = tile.inventory == null;
+        bool tileWasEmpty = tile.Inventory == null;
 
         if (tile.PlaceInventory(inv) == false)
         {
@@ -53,14 +53,14 @@ public class InventoryManager
         // We may also created a new stack on the tile, if the tile was previously empty.
         if (tileWasEmpty)
         {
-            if (inventories.ContainsKey(tile.inventory.objectType) == false)
+            if (inventories.ContainsKey(tile.Inventory.objectType) == false)
             {
-                inventories[tile.inventory.objectType] = new List<Inventory>();
+                inventories[tile.Inventory.objectType] = new List<Inventory>();
             }
 
-            inventories[tile.inventory.objectType].Add(tile.inventory);
+            inventories[tile.Inventory.objectType].Add(tile.Inventory);
 
-            World.current.OnInventoryCreated(tile.inventory);
+            World.current.OnInventoryCreated(tile.Inventory);
         }
 
         return true;
@@ -103,24 +103,24 @@ public class InventoryManager
             amount = Mathf.Min(amount, sourceInventory.stackSize);
         }
 
-        if (character.inventory == null)
+        if (character.Inventory == null)
         {
-            character.inventory = sourceInventory.Clone();
-            character.inventory.stackSize = 0;
-            inventories[character.inventory.objectType].Add(character.inventory);
+            character.Inventory = sourceInventory.Clone();
+            character.Inventory.stackSize = 0;
+            inventories[character.Inventory.objectType].Add(character.Inventory);
         } 
-        else if (character.inventory.objectType != sourceInventory.objectType)
+        else if (character.Inventory.objectType != sourceInventory.objectType)
         {
             Debug.LogError("Character is trying to pick up a mismatched inventory object type.");
             return false;
         }
 
-        character.inventory.stackSize += amount;
+        character.Inventory.stackSize += amount;
 
-        if (character.inventory.maxStackSize < character.inventory.stackSize)
+        if (character.Inventory.maxStackSize < character.Inventory.stackSize)
         {
-            sourceInventory.stackSize = character.inventory.stackSize - character.inventory.maxStackSize;
-            character.inventory.stackSize = character.inventory.maxStackSize;
+            sourceInventory.stackSize = character.Inventory.stackSize - character.Inventory.maxStackSize;
+            character.Inventory.stackSize = character.Inventory.maxStackSize;
 
         }
         else
@@ -136,7 +136,7 @@ public class InventoryManager
     public Inventory GetClosestInventoryOfType(string objectType, Tile t, int desiredAmount, bool canTakeFromStockpile)
     {
         Path_AStar path = GetPathToClosestInventoryOfType(objectType, t, desiredAmount, canTakeFromStockpile);
-        return path.EndTile().inventory;
+        return path.EndTile().Inventory;
     }
 
     public Path_AStar GetPathToClosestInventoryOfType(string objectType, Tile t, int desiredAmount, bool canTakeFromStockpile)

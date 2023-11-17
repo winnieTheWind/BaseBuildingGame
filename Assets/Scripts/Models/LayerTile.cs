@@ -95,7 +95,7 @@ public class LayerTile : IXmlSerializable, ISelectableInterface
             int z = tile.Z;
 
             t = World.current.GetTileAt(x, z + 1); // Northern neighbour
-            if (t != null && t.LayerTile != null && t.LayerTile.cbOnChanged != null && t.LayerTile.Type == obj.Tile.LayerTile.Type)
+            if (t != null && t.LayerTile != null && t.LayerTile.cbOnChanged != null && t.LayerTile.Type == obj.Type)
             {
                 t.LayerTile.cbOnChanged(t.LayerTile);
             }

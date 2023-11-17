@@ -2,12 +2,32 @@
   "job_furniture_prototypes": [
     {
       "type": "Wall",
-      "jobTile": 10,
-      "width": 1,
-      "height": 1,
-      "linksToNeighbours": false,
-      "enclosesRooms": true,
-      "is3D": true
+      "jobTime": 1,
+      "materialForBuild": "Steel_Plate",
+      "is3D": "true",
+      "jobRepeats": "false"
+    },
+    {
+      "type": "Desk",
+      "jobTime": 1,
+      "materialForBuild": "",
+      "is3D": "true",
+      "jobRepeats": "false"
+    },
+    {
+      "type": "Round_Table",
+      "jobTime": 1,
+      "materialForBuild": "",
+      "is3D": "true",
+      "jobRepeats": "false"
+    },
+    {
+      "type": "Stockpile",
+      "jobTime": -1,
+      "materialForBuild": "",
+      "is3D": "false",
+      "jobRepeats": "false"
     }
   ]
 }
+

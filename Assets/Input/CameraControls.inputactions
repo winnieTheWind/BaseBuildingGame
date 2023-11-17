@@ -1,0 +1,54 @@
+{
+    "name": "CameraControls",
+    "maps": [
+        {
+            "name": "Camera",
+            "id": "5f380e16-c85b-4738-9383-f391bca91968",
+            "actions": [
+                {
+                    "name": "Pan",
+                    "type": "Value",
+                    "id": "6a5d2332-8ace-49be-9581-0e4ca4354181",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "CameraRotate",
+                    "type": "Value",
+                    "id": "709e6dc8-f573-4929-913d-52624447a4da",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "59036125-1a4b-42d2-8f94-ee90cb024f1a",
+                    "path": "<Pointer>/delta",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Pan",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c64d8b05-bf03-40b8-80ab-9520e63b7c58",
+                    "path": "<Pointer>/delta",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CameraRotate",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

@@ -42,49 +42,59 @@ public class Tile : IXmlSerializable, ISelectableInterface
         get; protected set;
     }
 
-    public Room room;
+    public Room Room;
 
-    public Inventory inventory;
-    public Furniture furniture
+    public Inventory Inventory;
+    public Furniture Furniture
     {
         get; protected set;
     }
 
+    public Furniture Ceiling
+    {
+        get; protected set;
+    }
 
+    public Furniture TableFurniture
+    {
+        get; protected set;
+    }
 
-    public List<Character> characters;
+    public List<Furniture> FurnitureItems;
 
-    public Job pendingFurnitureJob;
-    public Job pendingTileJob;
+    public List<Character> Characters;
+
+    public Job PendingFurnitureJob;
+    public Job PendingTileJob;
 
     Action<Tile> cbTileChanged;
 
     public int X { get; protected set; }
     public int Z { get; protected set; }
 
-    public bool isUsingBitmaskText = false;
+    public bool IsUsingBitmaskText = false;
 
     private float _movementCost = 1f; // Default value
 
-    public float movementCost
+    public float MovementCost
     {
         get
         {
             if (Type == TileType.Empty)
                 return 0;   // 0 is unwalkable
 
-            if (furniture == null)
+            if (Furniture == null)
                 return _movementCost;
 
-            if (furniture.objectType == "Mining_Drone_Station")
+            if (Furniture.ObjectType == "Mining_Drone_Station")
             {
-                if (furniture.GetJobSpotTile() == this)
+                if (Furniture.GetJobSpotTile() == this)
                     return 1;
-                if (furniture.GetSpawnSpotTile() == this)
+                if (Furniture.GetSpawnSpotTile() == this)
                     return 1;
             }
 
-            return _movementCost * furniture.movementCost;
+            return _movementCost * Furniture.MovementCost;
 
         }
         set
@@ -99,7 +109,8 @@ public class Tile : IXmlSerializable, ISelectableInterface
     {
         this.X = x;
         this.Z = z;
-        characters = new List<Character>();
+        Characters = new List<Character>();
+        FurnitureItems = new List<Furniture>();
 
     }
 
@@ -143,12 +154,12 @@ public class Tile : IXmlSerializable, ISelectableInterface
         // Just uninstalling. FIXME: What if we have a multi tile furniture?
         //furniture = null;
 
-        if (furniture == null)
+        if (Furniture == null)
         {
             return false;
         }
 
-        Furniture f = furniture;
+        Furniture f = Furniture;
 
         for (int x_off = X; x_off < (X + f.Width); x_off++)
         {
@@ -156,7 +167,7 @@ public class Tile : IXmlSerializable, ISelectableInterface
             {
                 // At this point, everythings fine..
                 Tile t = World.current.GetTileAt(x_off, z_off);
-                t.furniture = null;
+                t.Furniture = null;
             }
         }
 
@@ -180,15 +191,25 @@ public class Tile : IXmlSerializable, ISelectableInterface
         {
             for (int z_off = Z; z_off < (Z + objInstance.Height); z_off++)
             {
-                // At this point, everythings fine..
                 Tile t = World.current.GetTileAt(x_off, z_off);
-                t.furniture = objInstance;
+
+                if (objInstance.ObjectType == "Ceiling")
+                {
+                    t.Ceiling = objInstance;
+                } 
+                else if (objInstance.ObjectType == "CashRegister")
+                {
+                    t.TableFurniture = objInstance;
+                } 
+                else
+                {
+                    t.Furniture = objInstance;
+                }
             }
         }
 
         return true;
     }
-
 
     public bool PlaceLayerTile(LayerTile objInstance)
     {
@@ -209,7 +230,11 @@ public class Tile : IXmlSerializable, ISelectableInterface
             {
                 // At this point, everythings fine..
                 Tile t = World.current.GetTileAt(x_off, z_off);
-                t.LayerTile = objInstance;
+
+                if (Furniture == null)
+                {
+                    t.LayerTile = objInstance;
+                }
             }
         }
 
@@ -220,26 +245,26 @@ public class Tile : IXmlSerializable, ISelectableInterface
     {
         if (inv == null)
         {
-            inventory = null;
+            Inventory = null;
             return true;
         }
 
-        if (inventory != null)
+        if (Inventory != null)
         {
             // Theres already inventory here, maybe we can combine a stack?
 
-            if (inventory.objectType != inv.objectType)
+            if (Inventory.objectType != inv.objectType)
             {
                 Debug.LogError("Trying to assign inventory to a tile that already has some of a different type.");
                 return false;
             }
 
             int numToMove = inv.stackSize;
-            if (inventory.stackSize + numToMove > inventory.maxStackSize)
+            if (Inventory.stackSize + numToMove > Inventory.maxStackSize)
             {
-                numToMove = inventory.maxStackSize - inventory.stackSize;
+                numToMove = Inventory.maxStackSize - Inventory.stackSize;
             }
-            inventory.stackSize += numToMove;
+            Inventory.stackSize += numToMove;
             inv.stackSize -= numToMove;
 
             return true;
@@ -249,8 +274,8 @@ public class Tile : IXmlSerializable, ISelectableInterface
         // to know that the old stack is nw empty and 
         // has to be removed from the lists.
 
-        inventory = inv.Clone();
-        inventory.tile = this;
+        Inventory = inv.Clone();
+        Inventory.tile = this;
         inv.stackSize = 0;
 
         return true;
@@ -325,14 +350,14 @@ public class Tile : IXmlSerializable, ISelectableInterface
     public ENTERABILITY IsEnterable()
     {
         // this returns true if you enter this tile right this moment.
-        if (movementCost == 0)
+        if (MovementCost == 0)
         {
             return ENTERABILITY.Never;
         }
         // check out firntiure to see if it has a special block on enterability
-        if (furniture != null && furniture.IsEnterable != null)
+        if (Furniture != null && Furniture.IsEnterable != null)
         {
-            return furniture.IsEnterable(furniture);
+            return Furniture.IsEnterable(Furniture);
         }
         return ENTERABILITY.Yes;
     }
@@ -341,7 +366,7 @@ public class Tile : IXmlSerializable, ISelectableInterface
     {
         return World.current.GetTileAt(X, Z + 1);
     }
-     
+
     public Tile South()
     {
         return World.current.GetTileAt(X, Z - 1);
@@ -349,13 +374,14 @@ public class Tile : IXmlSerializable, ISelectableInterface
 
     public Tile West()
     {
-        return World.current.GetTileAt(X, Z - 1);
+        return World.current.GetTileAt(X - 1, Z);
     }
 
     public Tile East()
     {
-        return World.current.GetTileAt(X, Z + 1);
+        return World.current.GetTileAt(X + 1, Z);
     }
+
 
     #region ISelectableInterface implementation
     public string GetName()

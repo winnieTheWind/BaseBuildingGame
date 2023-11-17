@@ -2,12 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TextCore.Text;
+using UnityEngine.U2D.Animation;
+using static UnityEditor.Progress;
 
 public class CharacterSpriteController : MonoBehaviour
 {
     Dictionary<Character, GameObject> characterGameObjectMap;
 
     Dictionary<string, Sprite> characterSprites;
+    Dictionary<string, SpriteLibraryAsset> characterSpriteLibraryAsset;
+    public RuntimeAnimatorController RuntimeAnimatorController;
 
     World world
     {
@@ -20,6 +24,8 @@ public class CharacterSpriteController : MonoBehaviour
     void Start()
     {
         LoadSprites();
+
+        LoadSpriteAssets();
 
         characterGameObjectMap = new Dictionary<Character, GameObject>();
 
@@ -38,8 +44,18 @@ public class CharacterSpriteController : MonoBehaviour
         Sprite[] charSprites = Resources.LoadAll<Sprite>("Sprites/Characters");
         foreach (var item in charSprites)
         {
-            //Debug.Log(item);
             characterSprites[item.name] = item;
+        }
+
+    }
+
+    void LoadSpriteAssets()
+    {
+        characterSpriteLibraryAsset = new Dictionary<string, SpriteLibraryAsset>();
+        SpriteLibraryAsset[] charSprites = Resources.LoadAll<SpriteLibraryAsset>("Sprites/Characters");
+        foreach (var item in charSprites)
+        {
+            characterSpriteLibraryAsset[item.name] = item;
         }
     }
 
@@ -64,7 +80,8 @@ public class CharacterSpriteController : MonoBehaviour
         char_go.transform.SetParent(this.transform, true);
         
         SpriteRenderer sr = char_go.AddComponent<SpriteRenderer>();
-        sr.sprite = characterSprites["peoplesprite1_7"];
+
+        //sr.sprite = GetSpriteForCharacter(character.Filename);
         sr.sortingLayerName = "Characters";
 
         sr.material = CharacterMaterial;
@@ -75,10 +92,17 @@ public class CharacterSpriteController : MonoBehaviour
         char_go.transform.localScale = Vector3.one; // Set scale to (1, 1, 1)
         char_go.transform.rotation = Quaternion.identity; // Reset rotation
 
-        character.Type = CharacterType.ConstructionWorker;
-
         // Add BillboardController component
         BillboardController billboardController = char_go.AddComponent<BillboardController>();
+
+        Animator animator = char_go.AddComponent<Animator>();
+        animator.runtimeAnimatorController = RuntimeAnimatorController;
+
+        SpriteLibrary spriteLibrary = char_go.AddComponent<SpriteLibrary>();
+        spriteLibrary.spriteLibraryAsset = characterSpriteLibraryAsset[character.Type + "_SpriteAsset"];
+
+        SpriteResolver resolver = char_go.AddComponent<SpriteResolver>();
+        resolver.SetCategoryAndLabel("WalkDown", "2");
 
         character.RegisterOnChangedCallback(OnCharacterChanged);
     }
@@ -94,13 +118,27 @@ public class CharacterSpriteController : MonoBehaviour
         GameObject char_go = characterGameObjectMap[c];
 
         // Ensure the billboard effect
-        char_go.transform.LookAt(Camera.main.transform.position);
-        char_go.transform.Rotate(0, 180, 0);
+        //char_go.transform.LookAt(Camera.main.transform.position);
+        //char_go.transform.Rotate(0, 180, 0);
         char_go.layer = 7;
 
         char_go.transform.localScale = new Vector3(1, 1, 1);
         char_go.transform.position = new Vector3(c.X, 0.904f, c.Z);
-        c.Type = CharacterType.ConstructionWorker;
+    }
 
+    public Sprite GetSpriteForCharacter(string objectType)
+    {
+        if (characterSprites.ContainsKey(objectType))
+        {
+            return characterSprites[objectType];
+        }
+
+        if (characterSprites.ContainsKey(objectType + "_"))
+        {
+            return characterSprites[objectType + "_"];
+        }
+
+        Debug.LogError("GetSpriteForCharacter -- No sprites with name: " + objectType);
+        return null;
     }
 }

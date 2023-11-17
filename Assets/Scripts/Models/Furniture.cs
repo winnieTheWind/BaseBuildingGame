@@ -1,6 +1,4 @@
 
-// InstalledObjects are objects that are installed to a tile, like: Doors, Walls, Tables etc
-
 using System;
 using System.Xml.Schema;
 using System.Xml;
@@ -8,8 +6,6 @@ using System.Xml.Serialization;
 using System.Collections.Generic;
 using UnityEngine;
 using MoonSharp.Interpreter;
-using Unity.VisualScripting;
-using System.Net.Security;
 
 [MoonSharpUserData]
 public class Furniture : IXmlSerializable, ISelectableInterface
@@ -26,9 +22,8 @@ public class Furniture : IXmlSerializable, ISelectableInterface
 
     List<Job> jobs;
 
-    public Vector3 jobSpotOffset = Vector3.zero;
-    public Vector3 jobSpawnSpotOffset = Vector3.zero;
-
+    public Vector3 JobSpotOffset = Vector3.zero;
+    public Vector3 JobSpawnSpotOffset = Vector3.zero;
 
     public void Update(float deltaTime)
     {
@@ -40,13 +35,13 @@ public class Furniture : IXmlSerializable, ISelectableInterface
 
     // This represents the BASE tile of the object -- but in practice, large objects may actually occupy
     // multile tiles.
-    public Tile tile
+    public Tile Tile
     {
         get; protected set;
     }
 
     // This "objectType" will be queried by the visual system to know what sprite to render for this object
-    public string objectType
+    public string ObjectType
     {
         get; protected set;
     }
@@ -56,25 +51,30 @@ public class Furniture : IXmlSerializable, ISelectableInterface
     // For example, a "rough" tile (cost of 2) with a table (cost of 3) that is on fire (cost of 3)
     // would have a total movement cost of (2+3+3 = 8), so you'd move through this tile at 1/8th normal speed.
     // SPECIAL: If movementCost = 0, then this tile is impassible. (e.g. a wall).
-    public float movementCost { get; protected set; }
+    public float MovementCost { get; protected set; }
 
-    public bool roomEnclosure;
+    public bool RoomEnclosure;
 
     // For example, a sofa might be 3x2 (actual graphics only appear to cover the 3x1 area, but the extra row is for leg room.)
     public int Width { get; protected set; }
     public int Height { get; protected set; }
 
-    public Color32 tint = new Color32(255, 255, 255, 255);
+    public float FloorHeight { get; protected set; }
 
-    public bool linksToNeighbour
+    public Color32 Tint = new Color32(255, 255, 255, 255);
+
+    public bool LinksToNeighbour
     {
         get; protected set;
     }
+
+    public EdgeOrientation edgeOrientation { get; set; }
 
     // TODO: Implement Larger Objects
     // TODO: Implement Object Rotation
 
     public Action<Furniture> cbOnChanged;
+    public Action<Furniture> cbOnCeilingFurnitureChanged;
     public Action<Furniture> cbOnRemoved;
 
     Func<Tile, bool> funcPositionValidation;
@@ -83,26 +83,43 @@ public class Furniture : IXmlSerializable, ISelectableInterface
 
     public int Bitmask { get; set; }
 
+    public bool UsingFurniture = false;
+
+    public Queue<Character> CharacterQueue;
+
+    // Using Prototype Design Pattern
+
     // Empty constructor is used for serialization
     public Furniture() {
         furnParameters = new Dictionary<string, float>();
         jobs = new List<Job>();
+        CharacterQueue = new Queue<Character>();
     }
 
     // Copy constructor -- dont call this directly unless
     // we never do any sub-classing, instead use Clone().
     // which is more virtual.
+
+    // Creates a new Furniture object as a copy of an existing one.
+    // This is particularly useful when you want to create a new instance
+    // that initially shares the same properties as an existing instance.
+
+    // The advantage is that you don't need to set all the properties again;
+    // they are copied from the prototype. This is particularly useful if
+    // the initialization process is complex or resource-intensive.
+
     protected Furniture(Furniture other)
     {
-        this.objectType = other.objectType;
-        this.movementCost = other.movementCost;
-        this.roomEnclosure = other.roomEnclosure;
+        this.ObjectType = other.ObjectType;
+        this.MovementCost = other.MovementCost;
+        this.RoomEnclosure = other.RoomEnclosure;
         this.Width = other.Width;
         this.Height = other.Height;
-        this.tint = other.tint;
-        this.linksToNeighbour = other.linksToNeighbour;
-        this.jobSpotOffset = other.jobSpotOffset;
-        this.jobSpawnSpotOffset = other.jobSpawnSpotOffset;
+        this.Tint = other.Tint;
+        this.LinksToNeighbour = other.LinksToNeighbour;
+        this.JobSpotOffset = other.JobSpotOffset;
+        this.JobSpawnSpotOffset = other.JobSpawnSpotOffset;
+        this.FloorHeight = other.FloorHeight;
 
         this.Is3D = other.Is3D;
 
@@ -130,91 +147,150 @@ public class Furniture : IXmlSerializable, ISelectableInterface
     // Note that it DOESN'T ask for a tile.
 
     // Create furniture from parameters -- this will probably only ever be used for prototypes
-    public Furniture(string objectType, float movementCost = 1f, int width = 1, int height = 1, bool linksToNeighbour = false, bool roomEnclosure = false, bool is3D = false)
+    public Furniture(string objectType, float movementCost = 1f, int width = 1, int height = 1, bool linksToNeighbour = false, bool roomEnclosure = false, bool is3D = false, float floorHeight = 0)
     {
         Furniture obj = new Furniture();
 
-        this.objectType = objectType;
-        this.movementCost = movementCost;
-        this.roomEnclosure = roomEnclosure;
+        this.ObjectType = objectType;
+        this.MovementCost = movementCost;
+        this.RoomEnclosure = roomEnclosure;
         this.Width = width;
         this.Height = height;
-        this.linksToNeighbour = linksToNeighbour;
+        this.LinksToNeighbour = linksToNeighbour;
         this.Is3D = is3D;
+        this.FloorHeight = floorHeight;
         // Assign the method directly to the delegate
         this.funcPositionValidation = this.DEFAULT__IsValidPosition;
 
         furnParameters = new Dictionary<string, float>();
-
     }
 
     static public Furniture PlaceInstance(Furniture proto, Tile tile)
     {
-
         if (proto.funcPositionValidation(tile) == false)
         {
             return null;
         }
         Furniture obj = proto.Clone();
-        //Furniture obj = new Furniture(proto);
-        obj.tile = tile;
+        obj.Tile = tile;
 
-        // FIXME: This assumes we are 1x1!
+        // Place the furniture
         if (tile.PlaceFurniture(obj) == false)
         {
-            return null;
+            return null; // Failed to place the furniture
         }
 
-        if (obj.linksToNeighbour)
+        if (obj.LinksToNeighbour)
         {
             Tile t;
             int x = tile.X;
             int z = tile.Z;
 
-            t = World.current.GetTileAt(x, z + 1); // Northern neighbour
-            if (t != null && t.furniture != null && t.furniture.cbOnChanged != null && t.furniture.objectType == obj.objectType)
-            {
-                t.furniture.cbOnChanged(t.furniture);
-            }
-            t = World.current.GetTileAt(x - 1, z); // Western neighbour
-            if (t != null && t.furniture != null && t.furniture.cbOnChanged != null && t.furniture.objectType == obj.objectType)
-            {
-                t.furniture.cbOnChanged(t.furniture);
-            }
-            t = World.current.GetTileAt(x + 1, z); // Eastern neighbour
-            if (t != null && t.furniture != null && t.furniture.cbOnChanged != null && t.furniture.objectType == obj.objectType)
-            {
-                t.furniture.cbOnChanged(t.furniture);
-            }
-            t = World.current.GetTileAt(x, z - 1); // Southern neighbour
+            // This needs to be worked on to be tidier, too much repetition.
 
-            if (t != null && t.furniture != null && t.furniture.cbOnChanged != null && t.furniture.objectType == obj.objectType)
+            // Northern neighbour
+            t = World.current.GetTileAt(x, z + 1);
+            if (t != null && t.Furniture != null && t.Furniture.cbOnChanged != null && t.Furniture.ObjectType == obj.ObjectType)
             {
-                t.furniture.cbOnChanged(t.furniture);
+                t.Furniture.cbOnChanged(t.Furniture);
             }
-            t = World.current.GetTileAt(x + 1, z + 1); // NE neighbour
-            if (t != null && t.furniture != null && t.furniture.cbOnChanged != null && t.furniture.objectType == obj.objectType)
+            // Western neighbour
+            t = World.current.GetTileAt(x - 1, z);
+            if (t != null && t.Furniture != null && t.Furniture.cbOnChanged != null && t.Furniture.ObjectType == obj.ObjectType)
             {
-                t.furniture.cbOnChanged(t.furniture);
+                t.Furniture.cbOnChanged(t.Furniture);
             }
-            t = World.current.GetTileAt(x - 1, z + 1); // NW neighbour
-            if (t != null && t.furniture != null && t.furniture.cbOnChanged != null && t.furniture.objectType == obj.objectType)
+            // Eastern neighbour
+            t = World.current.GetTileAt(x + 1, z);
+            if (t != null && t.Furniture != null && t.Furniture.cbOnChanged != null && t.Furniture.ObjectType == obj.ObjectType)
             {
-                t.furniture.cbOnChanged(t.furniture);
+                t.Furniture.cbOnChanged(t.Furniture);
             }
-            t = World.current.GetTileAt(x + 1, z - 1); // SE neighbour
-            if (t != null && t.furniture != null && t.furniture.cbOnChanged != null && t.furniture.objectType == obj.objectType)
+            // Southern neighbour
+            t = World.current.GetTileAt(x, z - 1);
+            if (t != null && t.Furniture != null && t.Furniture.cbOnChanged != null && t.Furniture.ObjectType == obj.ObjectType)
             {
-                t.furniture.cbOnChanged(t.furniture);
+                t.Furniture.cbOnChanged(t.Furniture);
             }
-            t = World.current.GetTileAt(x - 1, z - 1); // SW neighbour
-            if (t != null && t.furniture != null && t.furniture.cbOnChanged != null && t.furniture.objectType == obj.objectType)
+            // NE neighbour
+            t = World.current.GetTileAt(x + 1, z + 1);
+            if (t != null && t.Furniture != null && t.Furniture.cbOnChanged != null && t.Furniture.ObjectType == obj.ObjectType)
             {
-                t.furniture.cbOnChanged(t.furniture);
+                t.Furniture.cbOnChanged(t.Furniture);
+            }
+            // NW neighbour
+            t = World.current.GetTileAt(x - 1, z + 1);
+            if (t != null && t.Furniture != null && t.Furniture.cbOnChanged != null && t.Furniture.ObjectType == obj.ObjectType)
+            {
+                t.Furniture.cbOnChanged(t.Furniture);
+            }
+            // SE neighbour
+            t = World.current.GetTileAt(x + 1, z - 1);
+            if (t != null && t.Furniture != null && t.Furniture.cbOnChanged != null && t.Furniture.ObjectType == obj.ObjectType)
+            {
+                t.Furniture.cbOnChanged(t.Furniture);
+            }
+            // SW neighbour
+            t = World.current.GetTileAt(x - 1, z - 1);
+            if (t != null && t.Furniture != null && t.Furniture.cbOnChanged != null && t.Furniture.ObjectType == obj.ObjectType)
+            {
+                t.Furniture.cbOnChanged(t.Furniture);
+            }
+
+            // Ceiling objects only
+            // Northern neighbour
+            t = World.current.GetTileAt(x, z + 1);
+            if (t != null && t.Ceiling != null && t.Ceiling.cbOnChanged != null && t.Ceiling.ObjectType == "Ceiling")
+            {
+                t.Ceiling.cbOnChanged(t.Ceiling);
+            }
+            // Western neighbour
+            t = World.current.GetTileAt(x - 1, z);
+            if (t != null && t.Ceiling != null && t.Ceiling.cbOnChanged != null && t.Ceiling.ObjectType == "Ceiling")
+            {
+                t.Ceiling.cbOnChanged(t.Ceiling);
+            }
+            // Eastern neighbour
+            t = World.current.GetTileAt(x + 1, z);
+            if (t != null && t.Ceiling != null && t.Ceiling.cbOnChanged != null && t.Ceiling.ObjectType == "Ceiling")
+            {
+                t.Ceiling.cbOnChanged(t.Ceiling);
+            }
+            // Southern neighbour
+            t = World.current.GetTileAt(x, z - 1);
+            if (t != null && t.Ceiling != null && t.Ceiling.cbOnChanged != null && t.Ceiling.ObjectType == "Ceiling")
+            {
+                t.Ceiling.cbOnChanged(t.Ceiling);
+            }
+            // NE neighbour
+            t = World.current.GetTileAt(x + 1, z + 1);
+            if (t != null && t.Ceiling != null && t.Ceiling.cbOnChanged != null && t.Ceiling.ObjectType == "Ceiling")
+            {
+                t.Ceiling.cbOnChanged(t.Ceiling);
+            }
+            // NW neighbour
+            t = World.current.GetTileAt(x - 1, z + 1);
+            if (t != null && t.Ceiling != null && t.Ceiling.cbOnChanged != null && t.Ceiling.ObjectType == "Ceiling")
+            {
+                t.Ceiling.cbOnChanged(t.Ceiling);
+            }
+            // SE neighbour
+            t = World.current.GetTileAt(x + 1, z - 1);
+            if (t != null && t.Ceiling != null && t.Ceiling.cbOnChanged != null && t.Ceiling.ObjectType == "Ceiling")
+            {
+                t.Ceiling.cbOnChanged(t.Ceiling);
+            }
+            // SW neighbour
+            t = World.current.GetTileAt(x - 1, z - 1);
+            if (t != null && t.Ceiling != null && t.Ceiling.cbOnChanged != null && t.Ceiling.ObjectType == "Ceiling")
+            {
+                t.Ceiling.cbOnChanged(t.Ceiling);
             }
         }
+
         return obj;
     }
+
 
     public void RegisterOnChangedCallback(Action<Furniture> callbackFunc)
     {
@@ -224,6 +300,16 @@ public class Furniture : IXmlSerializable, ISelectableInterface
     public void UnregisterOnChangedCallback(Action<Furniture> callbackFunc)
     {
         cbOnChanged -= callbackFunc;
+    }
+
+    public void RegisterOnCeilingFurnitureChangedCallback(Action<Furniture> callbackFunc)
+    {
+        cbOnCeilingFurnitureChanged += callbackFunc;
+    }
+
+    public void UnregisterOnCeilingFurnitureChangedCallback(Action<Furniture> callbackFunc)
+    {
+        cbOnCeilingFurnitureChanged -= callbackFunc;
     }
 
     public void RegisterOnRemovedCallback(Action<Furniture> callbackFunc)
@@ -250,25 +336,27 @@ public class Furniture : IXmlSerializable, ISelectableInterface
     protected bool DEFAULT__IsValidPosition(Tile t)
     {
         List<TileType> allowedTileTypes = new List<TileType>
+        {
+            TileType.Grass,
+            TileType.Stone_Panel,
+            TileType.Wood_Panel,
+            TileType.Slab1,
+            TileType.Slab2,
+            TileType.Slab3,
+            TileType.Slab4,
+            TileType.Road1,
+            TileType.Road2,
+            TileType.Road3,
+            TileType.Road4,
+            TileType.Road5,
+            // Add more allowed tile types as needed
+        };
+
+        return HandleFurnitureValidPosition(t, this.ObjectType, allowedTileTypes); // Or whatever logic you need here
+    }
+
+    bool HandleFurnitureValidPosition(Tile t, string objectType, List<TileType> allowedTileTypes)
     {
-        TileType.Grass,
-        TileType.Stone_Panel,
-        TileType.Wood_Panel,
-        TileType.Slab1,
-        TileType.Slab2,
-        TileType.Slab3,
-        TileType.Slab4,
-        TileType.Road1,
-        TileType.Road2,
-        TileType.Road3,
-        TileType.Road4,
-        TileType.Road5,
-
-        // Add more allowed tile types as needed
-    };
-        // If placing a CashRegister, we have different rules.
-        bool isPlacingCashRegister = this.objectType == "CashRegister";
-
         for (int x_off = t.X; x_off < (t.X + Width); x_off++)
         {
             for (int z_off = t.Z; z_off < (t.Z + Height); z_off++)
@@ -276,18 +364,40 @@ public class Furniture : IXmlSerializable, ISelectableInterface
                 Tile t2 = World.current.GetTileAt(x_off, z_off);
 
                 // If we're placing a CashRegister, the tile must have a Desk.
-                if (isPlacingCashRegister)
+                if (objectType == "Ceiling")
                 {
-                    if (t2.furniture == null || t2.furniture.objectType != "Desk")
+                    if (t2.Ceiling != null)
                     {
-                        // There's no Desk under this tile, so we can't place a CashRegister here.
+                        return false;
+                    }
+
+                    // For other furniture, the normal rules apply.
+                    if (!allowedTileTypes.Contains(t2.Type))
+                    {
+                        return false;
+                    }
+                }
+                else if (objectType == "CashRegister")
+                {
+                    if (t2.Furniture == null)
+                    {
+                        return false;
+                    }
+
+                    if (t2.Furniture.ObjectType != "Desk")
+                    {
+                        return false;
+                    }
+                    // For other furniture, the normal rules apply.
+                    if (!allowedTileTypes.Contains(t2.Type))
+                    {
                         return false;
                     }
                 }
                 else
                 {
                     // For other furniture, the normal rules apply.
-                    if (!allowedTileTypes.Contains(t2.Type) || t2.furniture != null)
+                    if (!allowedTileTypes.Contains(t2.Type) || t2.Furniture != null)
                     {
                         return false;
                     }
@@ -295,7 +405,7 @@ public class Furniture : IXmlSerializable, ISelectableInterface
             }
         }
 
-        return true; // Or whatever logic you need here
+        return true;
     }
 
     public XmlSchema GetSchema()
@@ -305,10 +415,9 @@ public class Furniture : IXmlSerializable, ISelectableInterface
 
     public void WriteXml(XmlWriter writer)
     {
-        writer.WriteAttributeString("X", tile.X.ToString());
-        writer.WriteAttributeString("Z", tile.Z.ToString());
-        writer.WriteAttributeString("objectType", objectType.ToString());
-        //writer.WriteAttributeString("movementCost", movementCost.ToString());
+        writer.WriteAttributeString("X", Tile.X.ToString());
+        writer.WriteAttributeString("Z", Tile.Z.ToString());
+        writer.WriteAttributeString("objectType", ObjectType.ToString());
 
         foreach (string k in furnParameters.Keys)
         {
@@ -321,9 +430,6 @@ public class Furniture : IXmlSerializable, ISelectableInterface
 
     public void ReadXml(XmlReader reader)
     {
-        //objectType = reader.GetAttribute("objectType");
-        //movementCost = int.Parse(reader.GetAttribute("movementCost"));
-
         if (reader.ReadToDescendant("Param"))
         {
             do
@@ -335,12 +441,6 @@ public class Furniture : IXmlSerializable, ISelectableInterface
         }
     }
 
-    /// <summary>
-    /// Gets the custom furniture parameter from a string key.
-    /// </summary>
-    /// <returns>The parameter value (float).</returns>
-    /// <param name="key">Key string.</param>
-    /// <param name="default_value">Default value.</param>
     public float GetParameter(string key, float default_value = 0)
     {
         if (furnParameters.ContainsKey(key) == false)
@@ -366,10 +466,6 @@ public class Furniture : IXmlSerializable, ISelectableInterface
         furnParameters[key] += value;
     }
 
-    /// <summary>
-    /// Registers a function that will be called every Update.
-    /// (Later this implementation might change a bit as we support LUA.)
-    /// </summary>
     public void RegisterUpdateAction(Action<Furniture, float> a)
     {
         updateActions += a;
@@ -426,23 +522,23 @@ public class Furniture : IXmlSerializable, ISelectableInterface
 
     public bool IsStockpile()
     {
-        return objectType == "Stockpile";
+        return ObjectType == "Stockpile";
     }
 
     public void Deconstruct()
     {
         UnityEngine.Debug.Log("Deconstruct");
 
-        tile.UnplaceFurniture();
+        Tile.UnplaceFurniture();
 
         if (cbOnRemoved != null)
         {
             cbOnRemoved(this);
         }
 
-        if (roomEnclosure)
+        if (RoomEnclosure)
         {
-            Room.DoRoomFloodFill(this.tile, false);
+            Room.DoRoomFloodFill(this.Tile, false);
         }
 
         World.current.InvalidateTileGraph();
@@ -453,19 +549,19 @@ public class Furniture : IXmlSerializable, ISelectableInterface
     }
     public Tile GetJobSpotTile()
     {
-        return World.current.GetTileAt(tile.X + (int)jobSpotOffset.x, tile.Z + (int)jobSpotOffset.z);
+        return World.current.GetTileAt(Tile.X + (int)JobSpotOffset.x, Tile.Z + (int)JobSpotOffset.z);
     }
 
     public Tile GetSpawnSpotTile()
     {
         // TODO: Allow us to customize this
-        return World.current.GetTileAt(tile.X + (int)jobSpawnSpotOffset.x, tile.Z + (int)jobSpawnSpotOffset.z);
+        return World.current.GetTileAt(Tile.X + (int)JobSpawnSpotOffset.x, Tile.Z + (int)JobSpawnSpotOffset.z);
     }
 
     #region ISelectableInterface implementation
     public string GetName()
     {
-        return this.objectType;
+        return this.ObjectType;
     }
     public string GetDescription()
     {

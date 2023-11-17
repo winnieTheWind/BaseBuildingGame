@@ -151,13 +151,3 @@ public class InventorySpriteController : MonoBehaviour
 
 
 }
-
-// Ok I'm spawning the InventoryUIPrefab where the sprite is being spawned.
-// However, I can't place tiles where the sprites are..
-// Im guessing it has something to do with the raycast, maybe?
-// I can normally place tiles and walls on the ground.
-// if I only spawn the sprite, placing the tiles or walls works.
-// Once I instantiate the InventoryUIPrefab, I then cant place tiles or walls in the vicinity
-// of the text.
-// The text itself is a child of a canvas object, and the canvas object is
-// set to world space. The text itself is a TextMeshProGUI object.

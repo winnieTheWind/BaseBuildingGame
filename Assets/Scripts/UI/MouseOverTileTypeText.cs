@@ -3,7 +3,6 @@ using TMPro;
 
 public class MouseOverTileTypeText : MonoBehaviour
 {
-
     // Every frame, this script checks to see which tile
     // is under the mouse and then updates the GetComponent<Text>.text
     // parameter of the object it is attached to.
@@ -41,13 +40,13 @@ public class MouseOverTileTypeText : MonoBehaviour
 
         if (t != null)
         {
-            if (t.furniture != null && t.furniture.objectType == "Stockpile")
+            if (t.Furniture != null && t.Furniture.ObjectType != "Ceiling" &&t.Furniture.ObjectType == "Stockpile")
             {
-                myText.text = "Tile Type: " + t.Type.ToString() + " " + t.X.ToString() + " " + t.Z.ToString() + " " + t.furniture.Bitmask;
+                myText.text = "Tile Type: " + t.Type.ToString() + " " + t.X.ToString() + " " + t.Z.ToString() + " " + t.Furniture.Bitmask;
 
             } else
             {
-                myText.text = "Tile Type: " + t.Type.ToString() + " " + t.X.ToString() + " " + t.Z.ToString() + " " + t.movementCost;
+                myText.text = "Tile Type: " + t.Type.ToString() + " " + t.X.ToString() + " " + t.Z.ToString() + " " + t.MovementCost;
 
             }
         }

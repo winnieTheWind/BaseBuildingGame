@@ -32,7 +32,7 @@ public class MouseOverRoomIndexText : MonoBehaviour
 
         if (myText != null && t != null)
         {
-            myText.text = "Room Index: " + World.current.rooms.IndexOf(t.room).ToString();
+            myText.text = "Room Index: " + World.current.rooms.IndexOf(t.Room).ToString();
         }
     }
 }

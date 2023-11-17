@@ -1,8 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using TMPro;
-using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
-using static UnityEditor.Progress;
 
 public class FurnitureMeshController : MonoBehaviour
 {
@@ -54,8 +51,6 @@ public class FurnitureMeshController : MonoBehaviour
         }
     }
 
-    bool isInitialFurniture = true;
-
     public void OnFurnitureCreated(Furniture furn)
     {
         if (furn == null)
@@ -63,6 +58,7 @@ public class FurnitureMeshController : MonoBehaviour
             Debug.LogError("Null InstalledObject passed to OnFurnitureCreated");
             return;
         }
+
 
         GameObject furn_go;
 
@@ -76,8 +72,8 @@ public class FurnitureMeshController : MonoBehaviour
             // add our tile/GO pair to the dictionary
             furnitureGameObjectMap.Add(furn, furn_go);
 
-            furn_go.name = furn.objectType.ToString() + "_" + furn.tile.X + "_" + furn.tile.Z;
-            furn_go.transform.position = new Vector3(furn.tile.X + ((furn.Width-1)/2f), 0, furn.tile.Z + ((furn.Height - 1) / 2f));
+            furn_go.name = furn.ObjectType.ToString() + "_" + furn.Tile.X + "_" + furn.Tile.Z;
+            furn_go.transform.position = new Vector3(furn.Tile.X + ((furn.Width-1)/2f), furn.FloorHeight, furn.Tile.Z + ((furn.Height - 1) / 2f));
             furn_go.transform.SetParent(this.transform, true);
 
             // Get MeshRenderer component to the GameObject
@@ -85,7 +81,9 @@ public class FurnitureMeshController : MonoBehaviour
             meshRenderer.sortingLayerName = "Furniture";
 
             // Optionally, you might want to set the material of the MeshRenderer
-            meshRenderer.material = MaterialManager.Instance.GetMaterial(furn.objectType + "Material");
+            meshRenderer.material = MaterialManager.Instance.GetMaterial(furn.ObjectType + "Material");
+
+         
 
         } else
         {
@@ -93,8 +91,8 @@ public class FurnitureMeshController : MonoBehaviour
             // add our tile/GO pair to the dictionary
             furnitureGameObjectMap.Add(furn, furn_go);
 
-            furn_go.name = furn.objectType.ToString() + "_" + furn.tile.X + "_" + furn.tile.Z;
-            furn_go.transform.position = new Vector3(furn.tile.X, 0, furn.tile.Z);
+            furn_go.name = furn.ObjectType.ToString() + "_" + furn.Tile.X + "_" + furn.Tile.Z;
+            furn_go.transform.position = new Vector3(furn.Tile.X, 0, furn.Tile.Z);
             furn_go.transform.rotation = Quaternion.Euler(90, 0, 0);
             furn_go.transform.SetParent(this.transform, true);
             //furn_go.GetComponentInChildren<SpriteRenderer>().sortingLayerName = "Furniture";
@@ -102,14 +100,17 @@ public class FurnitureMeshController : MonoBehaviour
             SpriteRenderer sr = furn_go.AddComponent<SpriteRenderer>();
             sr.sprite = GetSpriteForFurniture(furn);
             sr.sortingLayerName = "FurnitureTiles";
-            sr.color = furn.tint;
+            sr.color = furn.Tint;
 
         }
 
-        // Register our callback so that our GameObject gets updated whenever
-        // the object's into changes.
-        furn.RegisterOnChangedCallback(OnFurnitureChanged);
-        furn.RegisterOnRemovedCallback(OnFurnitureRemoved);
+       
+
+            // Register our callback so that our GameObject gets updated whenever
+            // the object's into changes.
+            furn.RegisterOnChangedCallback(OnFurnitureChanged);
+            furn.RegisterOnRemovedCallback(OnFurnitureRemoved);
+
     }
 
     void OnFurnitureRemoved(Furniture furn)
@@ -138,6 +139,8 @@ public class FurnitureMeshController : MonoBehaviour
             return;
         }
 
+        //Debug.Log("OnFurnitureChanged");
+
         isUpdatingFurniture = true;
 
         GameObject oldFurn_go = furnitureGameObjectMap[furn];
@@ -150,32 +153,39 @@ public class FurnitureMeshController : MonoBehaviour
             furnitureGameObjectMap.Remove(furn);
 
             // Get updated game object name and rotation for the new state of the furniture
+
             string updatedGameObjectName = GetGameObjectForFurniture(furn).ToString();  // Assuming you have such a function
 
-            GameObject newFurn_go = Instantiate(GetGameObjectForFurniture(furn), new Vector3(furn.tile.X, 0, furn.tile.Z), Quaternion.identity);
-            newFurn_go.name = updatedGameObjectName + "_" + furn.tile.X + "_" + furn.tile.Z;
+            GameObject newFurn_go = Instantiate(GetGameObjectForFurniture(furn), new Vector3(furn.Tile.X, furn.FloorHeight, furn.Tile.Z), Quaternion.identity);
+            newFurn_go.name = updatedGameObjectName + "_" + furn.Tile.X + "_" + furn.Tile.Z;
             newFurn_go.transform.SetParent(this.transform, true);
             MeshRenderer meshRenderer = newFurn_go.GetComponent<MeshRenderer>();
-            meshRenderer.material = WallMaterial;
-            meshRenderer.material.color = new Color(1f, 1f, 1f, 1f);
+            // Optionally, you might want to set the material of the MeshRenderer
+            meshRenderer.material = MaterialManager.Instance.GetMaterial(furn.ObjectType + "Material");
+            //meshRenderer.material.color = new Color(1f, 1f, 1f, 1f);
 
             //This hardcoding is not ideal!
-            if (furn.objectType == "Door")
+            if (furn.ObjectType == "Door")
             {
                 // By default, the door mesh is meant for walls to the east and west
                 // check to see if we actually have a wall north/south, and if so
                 // then rotate this GO by 90 degrees
 
-                Tile northTile = world.GetTileAt(furn.tile.X, furn.tile.Z + 1);
-                Tile southTile = world.GetTileAt(furn.tile.X, furn.tile.Z - 1);
+                Tile northTile = world.GetTileAt(furn.Tile.X, furn.Tile.Z + 1);
+                Tile southTile = world.GetTileAt(furn.Tile.X, furn.Tile.Z - 1);
 
-                if (northTile != null && southTile != null && northTile.furniture != null && southTile.furniture != null &&
-                    northTile.furniture.objectType == "Wall" && southTile.furniture.objectType == "Wall")
+                if (northTile != null && southTile != null && northTile.Furniture != null && southTile.Furniture != null &&
+                    northTile.Furniture.ObjectType == "Wall" && southTile.Furniture.ObjectType == "Wall")
                 {
                     //furn_go.transform.rotation = Quaternion.Euler(-90, 0, 90);
                     newFurn_go.transform.rotation = Quaternion.Euler(0, 90, 0);
                 }
             }
+
+            //else if (furn.objectType == "Edge")
+            //{
+            //    HandleEdgeRotation(furn, newFurn_go);
+            //}
 
             // Update the map to point to the new GameObject
             furnitureGameObjectMap[furn] = newFurn_go;
@@ -193,7 +203,7 @@ public class FurnitureMeshController : MonoBehaviour
             GameObject furn_go = furnitureGameObjectMap[furn];
 
             furn_go.GetComponent<SpriteRenderer>().sprite = GetSpriteForFurniture(furn);
-            furn_go.GetComponent<SpriteRenderer>().color = furn.tint;
+            furn_go.GetComponent<SpriteRenderer>().color = furn.Tint;
 
             isUpdatingFurniture = false;
         }
@@ -201,11 +211,11 @@ public class FurnitureMeshController : MonoBehaviour
 
     public Sprite GetSpriteForFurniture(Furniture furniture)
     {
-        string spriteName = furniture.objectType + "_";
+        string spriteName = furniture.ObjectType + "_";
 
         // Check for neighbours North, East, South, West, Northeast, Southeast, Southwest, Northwest
-        int x = furniture.tile.X;
-        int z = furniture.tile.Z;
+        int x = furniture.Tile.X;
+        int z = furniture.Tile.Z;
         string suffix = string.Empty;
 
         suffix += GetSuffixForNeighbour(furniture, x, z + 1, "N");
@@ -223,17 +233,31 @@ public class FurnitureMeshController : MonoBehaviour
         // For example, if this object has all eight neighbours of
         // the same type, then the string will look like:
         //       Wall_NESWneseswnw
+
         return furnitureSprites[spriteName + suffix];
 
     }
 
+    
+
     private string GetSuffixForNeighbour(Furniture furn, int x, int z, string suffix)
     {
-        Tile t = World.current.GetTileAt(x, z);
-        if (t != null && t.furniture != null && t.furniture.linksToNeighbour == furn.linksToNeighbour)
+        if (furn.ObjectType != "Ceiling")
         {
-            return suffix;
+            Tile t = World.current.GetTileAt(x, z);
+            if (t != null && t.Furniture != null && t.Furniture.LinksToNeighbour == furn.LinksToNeighbour)
+            {
+                return suffix;
+            }
+        } else
+        {
+            Tile t = World.current.GetTileAt(x, z);
+            if (t != null && t.Ceiling != null && t.Ceiling.LinksToNeighbour == furn.LinksToNeighbour)
+            {
+                return suffix;
+            }
         }
+        
 
         return string.Empty;
     }
@@ -253,13 +277,14 @@ public class FurnitureMeshController : MonoBehaviour
 
     public GameObject GetGameObjectForFurniture(Furniture furn)
     {
-        string gameObjectName = furn.objectType;
 
-        if (furn.linksToNeighbour == false)
+        string gameObjectName = furn.ObjectType;
+
+        if (furn.LinksToNeighbour == false)
         {
             // if this is a door, lets check openness and update the mesh.
             // FIXME: all this hardcording needs to be generalized
-            if (furn.objectType == "Door")
+            if (furn.ObjectType == "Door")
             {
                 if (furn.GetParameter("openness") < 0.1f)
                 {
@@ -286,49 +311,38 @@ public class FurnitureMeshController : MonoBehaviour
         }
 
         // Otherwise the gameobject name is more complicated
+        gameObjectName = furn.ObjectType + "_";
 
-        gameObjectName = furn.objectType + "_";
+        // Check for neighbours North, East, South, West, Northeast, Southeast, Southwest, Northwest
+        int x = furn.Tile.X;
+        int z = furn.Tile.Z;
+        string suffix = string.Empty;
 
-        // Check for neighbours north east south west
+        suffix += GetSuffixForNeighbour(furn, x, z + 1, "N");
+        suffix += GetSuffixForNeighbour(furn, x + 1, z, "E");
+        suffix += GetSuffixForNeighbour(furn, x, z - 1, "S");
+        suffix += GetSuffixForNeighbour(furn, x - 1, z, "W");
 
-        int x = furn.tile.X;
-        int z = furn.tile.Z;
+        // Now we check if we have the neighbours in the cardinal directions next to the respective diagonals
+        // because pure diagonal checking would leave us with diagonal walls and stockpiles, which make no sense.
+        suffix += GetSuffixForDiagonalNeighbour(suffix, "N", "E", furn, x + 1, z + 1);
+        suffix += GetSuffixForDiagonalNeighbour(suffix, "S", "E", furn, x + 1, z - 1);
+        suffix += GetSuffixForDiagonalNeighbour(suffix, "S", "W", furn, x - 1, z - 1);
+        suffix += GetSuffixForDiagonalNeighbour(suffix, "N", "W", furn, x - 1, z + 1);
 
-        Tile t;
-        t = world.GetTileAt(x, z + 1);
-        if (t != null && t.furniture != null && t.furniture.objectType == furn.objectType)
+        // For example, if this object has all eight neighbours of
+        // the same type, then the string will look like:
+        //       Wall_NESWneseswnw
+
+        if (furnitureMeshes.ContainsKey(gameObjectName + suffix) == false)
         {
-            gameObjectName += "N";
-        }
-        t = world.GetTileAt(x + 1, z);
-        if (t != null && t.furniture != null && t.furniture.objectType == furn.objectType)
-        {
-            gameObjectName += "E";
-        }
-        t = world.GetTileAt(x, z - 1);
-        if (t != null && t.furniture != null && t.furniture.objectType == furn.objectType)
-        {
-            gameObjectName += "S";
-        }
-        t = world.GetTileAt(x - 1, z);
-        if (t != null && t.furniture != null && t.furniture.objectType == furn.objectType)
-        {
-            gameObjectName += "W";
-        }
-
-        // For example, if this object has all four neighbours of the same type,
-        // then the string will look like:
-        // Wall_NSWE
-
-        if (furnitureMeshes.ContainsKey(gameObjectName) == false)
-        {
-            Debug.LogError("GetGameObjectFurniture -- No gameobject with name: " + gameObjectName);
-            return furnitureMeshes[gameObjectName];
+            Debug.LogError("GetGameObjectFurniture -- No gameobject with name: " + gameObjectName + suffix);
+            return furnitureMeshes[gameObjectName + suffix];
         }
 
-        return furnitureMeshes[gameObjectName];
+        return furnitureMeshes[gameObjectName + suffix];
     }
-
+    
     public GameObject GetGameObjectForFurniture(string objectType)
     {
         if (furnitureMeshes.ContainsKey(objectType))

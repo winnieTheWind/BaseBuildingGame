@@ -3,6 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
 
+public enum EdgeOrientation
+{
+    North,
+    South,
+    East,
+    West,
+    NorthWest,
+    SouthWest,
+    SouthEast,
+    NorthEast,
+    Unknown // Use this if the orientation cannot be determined
+}
+
 [MoonSharpUserData]
 public class Room
 {
@@ -27,13 +40,13 @@ public class Room
             return;
         }
 
-        if (t.room != null)
+        if (t.Room != null)
         {
             // Belongs to some other room
-            t.room.tiles.Remove(t);
+            t.Room.tiles.Remove(t);
         }
 
-        t.room = this;
+        t.Room = this;
         tiles.Add(t);
     }
 
@@ -41,7 +54,7 @@ public class Room
     {
         for (int i = 0; i < tiles.Count; i++)
         {
-            tiles[i].room = World.current.GetOutsideRoom();    // Assign to outside
+            tiles[i].Room = World.current.GetOutsideRoom();    // Assign to outside
         }
         tiles = new List<Tile>();
     }
@@ -112,7 +125,7 @@ public class Room
 
         World world = World.current;
 
-        Room oldRoom = sourceTile.room;
+        Room oldRoom = sourceTile.Room;
 
         if (oldRoom != null)
         {
@@ -122,13 +135,13 @@ public class Room
             // Try building new rooms for each of our NESW directions
             foreach (Tile t in sourceTile.GetNeighbours())
             {
-                if (t.room != null && (onlyIfNull == false || t.room.IsOutsideRoom()))
+                if (t.Room != null && (onlyIfNull == false || t.Room.IsOutsideRoom()))
                 {
                     ActualFloodFill(t, oldRoom);
                 }
             }
 
-            sourceTile.room = null;
+            sourceTile.Room = null;
 
             oldRoom.tiles.Remove(sourceTile);
 
@@ -142,12 +155,14 @@ public class Room
                 // so in practice this "DeleteRoom" should mostly only need
                 // to remove the room from the world's list.
 
+                
+
+                world.DeleteRoom(oldRoom);
+
                 if (oldRoom.tiles.Count > 0)
                 {
                     Debug.LogError("'oldRoom' still has tiles assigned to it. This is clearly wrong.");
                 }
-
-                world.DeleteRoom(oldRoom);
             }
         } else
         {
@@ -169,7 +184,7 @@ public class Room
             return;
         }
 
-        if (tile.room != oldRoom)
+        if (tile.Room != oldRoom)
         {
             // This tile was already assigned to another "new" room, which means
             // that the direction picked isn't isolated. So we can just return
@@ -177,7 +192,7 @@ public class Room
             return;
         }
 
-        if (tile.furniture != null && tile.furniture.roomEnclosure)
+        if (tile.Furniture != null && tile.Furniture.RoomEnclosure)
         {
             // This tile has a wall/door/whatever in it, so clearly
             // we can't do a room here.
@@ -206,7 +221,7 @@ public class Room
 
             processedTiles++;
 
-            if (t.room != newRoom)
+            if (t.Room != newRoom)
             {
                 newRoom.AssignTile(t);
 
@@ -231,7 +246,7 @@ public class Room
                     {
                         // We know t2 is not null nor is it an empty tile, so just make sure it
                         // hasn't already been processed and isn't a "wall" type tile.
-                        if (t2.room != newRoom && (t2.furniture == null || t2.furniture.roomEnclosure == false))
+                        if (t2.Room != newRoom && (t2.Furniture == null || t2.Furniture.RoomEnclosure == false))
                         {
                             tilesToCheck.Enqueue(t2);
                         }
@@ -248,6 +263,9 @@ public class Room
             // to outside.
             newRoom.ReturnTilesToOutsideRoom();
             return;
+        } else
+        {
+            newRoom.AddCeiling();
         }
 
         // Copy data from the old room into the new room.
@@ -265,9 +283,76 @@ public class Room
             // TODO
         }
 
+
+
         // Tell the world that a new room has been formed.
         World.current.AddRoom(newRoom);
+
+
     }
+
+    public void AddCeiling()
+    {
+        foreach (Tile t in tiles)
+        {
+            this.world.PlaceFurniture("Ceiling", t, false);
+        }
+
+        foreach (Tile t in GetBoundaryTiles())
+        {
+            this.world.PlaceFurniture("Ceiling", t, false);
+        }
+
+        //foreach (Tile t in GetSecondLevelBoundaryTiles())
+        //{
+        //    this.world.PlaceFurniture("Ceiling", t, false);
+        //}
+    }
+
+    public HashSet<Tile> GetBoundaryTiles()
+    {
+        HashSet<Tile> boundaryTiles = new HashSet<Tile>();
+
+        foreach (Tile roomTile in tiles)
+        {
+            foreach (Tile neighbor in roomTile.GetNeighbours(true))
+            {
+                // If neighbor is not in the room and not already in the set, it's a boundary tile
+                if (neighbor != null && !tiles.Contains(neighbor) && !boundaryTiles.Contains(neighbor))
+                {
+                    boundaryTiles.Add(neighbor);
+                }
+            }
+        }
+
+        return boundaryTiles;
+    }
+
+    public HashSet<Tile> GetSecondLevelBoundaryTiles()
+    {
+        HashSet<Tile> firstLevelBoundary = GetBoundaryTiles();
+        HashSet<Tile> secondLevelBoundary = new HashSet<Tile>();
+
+        foreach (Tile boundaryTile in firstLevelBoundary)
+        {
+            foreach (Tile neighbor in boundaryTile.GetNeighbours(true))
+            {
+                // Exclude tiles that are part of the room or the first boundary
+                if (neighbor != null && !tiles.Contains(neighbor) && !firstLevelBoundary.Contains(neighbor) && !secondLevelBoundary.Contains(neighbor))
+                {
+                    secondLevelBoundary.Add(neighbor);
+                }
+            }
+        }
+
+        return secondLevelBoundary;
+    }
+
+    // Ok this is good. So I'm spawning edge objects on the outside of the room, which is great.
+
+    // I've seperated them between Ceiling and Edge. I need to check the neighbours..
+    // if there is a neighbour to the N, then do something..
+    // and so on
 
     void CopyGas(Room other)
     {

@@ -72,8 +72,8 @@ public class JobMeshController : MonoBehaviour
                 Tile northTile = World.current.GetTileAt(job.tile.X, job.tile.Z + 1);
                 Tile southTile = World.current.GetTileAt(job.tile.X, job.tile.Z - 1);
 
-                if (northTile != null && southTile != null && northTile.furniture != null && southTile.furniture != null &&
-                    northTile.furniture.objectType == "Wall" && southTile.furniture.objectType == "Wall")
+                if (northTile != null && southTile != null && northTile.Furniture != null && southTile.Furniture != null &&
+                    northTile.Furniture.ObjectType == "Wall" && southTile.Furniture.ObjectType == "Wall")
                 {
                     job_go.transform.rotation = Quaternion.Euler(0, 90, 0);
                 }

@@ -38,9 +38,9 @@ public class MouseOverFurnitureTypeText : MonoBehaviour
 
         string s = "NULL";
 
-        if (t != null && t.furniture != null)
+        if (t != null && t.Furniture != null && t.Furniture.ObjectType != "Ceiling")
         {
-            s = t.furniture.objectType;
+            s = t.Furniture.ObjectType;
         }
         else
         {

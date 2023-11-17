@@ -30,6 +30,32 @@ public static class FurnitureActions
         }
     }
 
+    public static void CashRegister_UpdateAction(Furniture furn, float deltaTime)
+    {
+
+
+        //furn.CancelJobs();
+        Tile jobSpot = furn.GetJobSpotTile();
+
+        foreach (Furniture f in World.current.furnitures)
+        {
+            if (f.ObjectType == "CashRegister")
+            {
+                foreach (Character c in World.current.characters)
+                {
+                    if (c.CurrTile == f.GetJobSpotTile())
+                    {
+                        return;
+                    }
+
+                }
+            }
+        }
+
+        Job j = new Job(jobSpot, null, 0, null, false, false);
+        furn.AddJob(j);
+    }
+
     public static ENTERABILITY Door_IsEnterable(Furniture furn)
     {
         //Debug.Log("Door_IsEnterable");
@@ -49,7 +75,7 @@ public static class FurnitureActions
 
         // FIXME: I don't like having to manually and explicitly set
         // flags that preven conflicts. It's too easy to forget to set/clear them!
-        theJob.tile.pendingFurnitureJob = null;
+        theJob.tile.PendingFurnitureJob = null;
     }
 
     public static Inventory[] Stockpile_GetItemsFromFilter()
@@ -79,7 +105,7 @@ public static class FurnitureActions
         //		-- A good gets picked up (at which point we reset the job)
         //		-- The UI's filter of allowed items gets changed
 
-        if (furn.tile.inventory != null && furn.tile.inventory.stackSize >= furn.tile.inventory.maxStackSize)
+        if (furn.Tile.Inventory != null && furn.Tile.Inventory.stackSize >= furn.Tile.Inventory.maxStackSize)
         {
             // We are full!
           furn.CancelJobs();
@@ -97,7 +123,7 @@ public static class FurnitureActions
         // Two possibilities: Either we have SOME inventory, or we have NO inventory.
 
         // Third possibility: Something is WHACK
-        if (furn.tile.inventory != null && furn.tile.inventory.stackSize == 0)
+        if (furn.Tile.Inventory != null && furn.Tile.Inventory.stackSize == 0)
         {
             Debug.LogError("Stockpile has a zero-size stack. This is clearly WRONG!");
             furn.CancelJobs();
@@ -116,13 +142,13 @@ public static class FurnitureActions
 
         Inventory[] itemsDesired;
 
-        if (furn.tile.inventory == null)
+        if (furn.Tile.Inventory == null)
         {
             itemsDesired = Stockpile_GetItemsFromFilter();
         }
         else
         {
-            Inventory desInv = furn.tile.inventory.Clone();
+            Inventory desInv = furn.Tile.Inventory.Clone();
             desInv.maxStackSize -= desInv.stackSize;
             desInv.stackSize = 0;
 
@@ -130,7 +156,7 @@ public static class FurnitureActions
         }
 
         Job j = new Job(
-            furn.tile,
+            furn.Tile,
             null,
             0,
             itemsDesired,
@@ -165,10 +191,10 @@ public static class FurnitureActions
 
     public static void OxygenGenerator_UpdateAction(Furniture furn, float deltaTime)
     {
-        if (furn.tile.room.GetGasAmount("O2") < 0.20f)
+        if (furn.Tile.Room.GetGasAmount("O2") < 0.20f)
         {
             // TODO: Change the gas contribution based on the volume of the room
-            furn.tile.room.ChangeGas("O2", 0.01f * deltaTime);  // TODO: Replace hardcoded value!
+            furn.Tile.Room.ChangeGas("O2", 0.01f * deltaTime);  // TODO: Replace hardcoded value!
                                                                 // TODO: Consume electricity while running!
         }
         else
@@ -184,7 +210,7 @@ public static class FurnitureActions
         if (furn.JobCount() > 0)
         {
             // We already have a job, so nothing to do.
-            if (spawnSpot.inventory != null && spawnSpot.inventory.stackSize >= spawnSpot.inventory.maxStackSize)
+            if (spawnSpot.Inventory != null && spawnSpot.Inventory.stackSize >= spawnSpot.Inventory.maxStackSize)
             {
                 // We should stop this job, because its impossible to make any more items.
                 furn.CancelJobs();
@@ -193,7 +219,7 @@ public static class FurnitureActions
         }
 
         // If we get here, then have no current job. Check to see if your destination is full.
-        if (spawnSpot.inventory != null && spawnSpot.inventory.stackSize >= spawnSpot.inventory.maxStackSize)
+        if (spawnSpot.Inventory != null && spawnSpot.Inventory.stackSize >= spawnSpot.Inventory.maxStackSize)
         {
             // We are full, dont make jo
             return;
@@ -202,7 +228,7 @@ public static class FurnitureActions
         // If we get here, we need to create a new job.
         Tile jobSpot = furn.GetJobSpotTile();
 
-        if (jobSpot.inventory != null && (jobSpot.inventory.stackSize >= jobSpot.inventory.maxStackSize))
+        if (jobSpot.Inventory != null && (jobSpot.Inventory.stackSize >= jobSpot.Inventory.maxStackSize))
         {
             // Our drop spot is already full, so don't create a job.
             return;

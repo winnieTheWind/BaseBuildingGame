@@ -2,6 +2,7 @@ using UnityEngine;
 
 public enum BuildMode
 {
+    CHARACTER,
     FLOOR,
     LAYERFLOOR,
     FURNITURE,
@@ -34,6 +35,11 @@ public class BuildModeController : MonoBehaviour
             return true;
         }
 
+        if (buildMode == BuildMode.CHARACTER)
+        {
+            return false;
+        }
+
         Furniture proto = WorldController.Instance.world.furniturePrototypes[buildModeObjectType];
         return proto.Width == 1 && proto.Height == 1;
     }
@@ -41,6 +47,15 @@ public class BuildModeController : MonoBehaviour
     public void DoPathfindingTest()
     {
         WorldController.Instance.world.SetupPathfindingExample();
+    }
+
+    public void SetMode_BuildCharacter(string characterType)
+    {
+        buildMode = BuildMode.CHARACTER;
+
+        buildModeObjectType = characterType;
+
+        GameObject.FindObjectOfType<MouseController>().StartBuildMode();
     }
 
     public void SetMode_BuildFloor(TileType type)
@@ -96,13 +111,12 @@ public class BuildModeController : MonoBehaviour
                 return; // Exit early to prevent further processing
             }
             // Create the Furniture and assign it to the tile
-            // FIXME: This instantly builds the furniture
             // Can we build the furniture in the selected tile?
             // Run the ValidPlacement function!
             string furnitureType = buildModeObjectType;
 
             if (WorldController.Instance.world.IsFurniturePlacementValid(furnitureType, t) &&
-                t.pendingFurnitureJob == null)
+                t.PendingFurnitureJob == null)
             {
                 // This tile is valid for this furniture
                 // Create a job for it to be built!
@@ -126,8 +140,8 @@ public class BuildModeController : MonoBehaviour
 
                 // FIXME: I dont like having to manually and explicity set flags
                 // that prevent conflicts, its too easy to forget to set/clear them!
-                t.pendingFurnitureJob = j;
-                j.RegisterJobStoppedCallback((theJob) => { theJob.tile.pendingFurnitureJob = null; });
+                t.PendingFurnitureJob = j;
+                j.RegisterJobStoppedCallback((theJob) => { theJob.tile.PendingFurnitureJob = null; });
 
                 WorldController.Instance.world.jobQueue.Enqueue(j);
                 //Debug.Log("Job Queue Size: " + WorldController.Instance.world.jobQueue.Count);
@@ -137,15 +151,21 @@ public class BuildModeController : MonoBehaviour
         {
             if (WorldController.Instance.world.currentUserState == World.UserState.FREE_EDIT)
             {
+                if (t.Furniture != null)
+                {
+                    return;
+                }
+
                 if (t.LayerTile != null)
                 {
                     t.LayerTile.Deconstruct();
                 }
+
                 t.Type = buildModeTile;
                 return; // Exit early to prevent further processing
             }
 
-            if (t.pendingTileJob == null)
+            if (t.PendingTileJob == null)
             {
                 // If the tile change is valid, proceed with creating and queueing the job.
                 Job tileJob = new Job(
@@ -159,7 +179,7 @@ public class BuildModeController : MonoBehaviour
                 );
                 tileJob.isRenderingTile = true;
 
-                t.pendingTileJob = tileJob;
+                t.PendingTileJob = tileJob;
 
                 // Enqueue the job in your job system.
                 WorldController.Instance.world.jobQueue.Enqueue(tileJob);
@@ -170,9 +190,9 @@ public class BuildModeController : MonoBehaviour
         else if (buildMode == BuildMode.DESCONSTRUCT)
         {
             // TODO:
-            if (t.furniture != null)
+            if (t.Furniture != null)
             {
-                t.furniture.Deconstruct();
+                t.Furniture.Deconstruct();
             }
         }
         else if (buildMode == BuildMode.LAYERFLOOR)
@@ -185,6 +205,21 @@ public class BuildModeController : MonoBehaviour
                     WorldController.Instance.world.PlaceLayerTile(buildModeTile.ToString(), t);
                     return; // Exit early to prevent further processing
                 }
+            }
+        }
+        else if (buildMode == BuildMode.CHARACTER)
+        {
+            if (t.Characters.Count == 0)
+            {
+                string type = buildModeObjectType;
+
+                Character c = WorldController.Instance.world.characterPrototypes[type].Clone();
+                c.Tile = t;
+
+                WorldController.Instance.world.CreateCharacter(WorldController.Instance.world.GetTileAt(c.Tile.X, c.Tile.Z), type);
+            } else
+            {
+                Debug.Log("Character already in place.");
             }
         }
         else

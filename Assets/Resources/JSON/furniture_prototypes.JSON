@@ -7,7 +7,8 @@
       "height": 1,
       "linksToNeighbours": "false",
       "enclosesRooms": "true",
-      "is3D":  "true"
+      "is3D": "true",
+      "floorHeight": 0
     },
     {
       "type": "Desk",
@@ -16,7 +17,8 @@
       "height": 1,
       "linksToNeighbours": "false",
       "enclosesRooms": "true",
-      "is3D": "true"
+      "is3D": "true",
+      "floorHeight": 0
     },
     {
       "type": "Mining_Drone_Station",
@@ -25,7 +27,8 @@
       "height": 3,
       "linksToNeighbours": "false",
       "enclosesRooms": "false",
-      "is3D": "true"
+      "is3D": "true",
+      "floorHeight": 0
     },
     {
       "type": "Oxygen_Generator",
@@ -34,7 +37,8 @@
       "height": 2,
       "linksToNeighbours": "false",
       "enclosesRooms": "false",
-      "is3D": "true"
+      "is3D": "true",
+      "floorHeight": 0
     },
     {
       "type": "Stockpile",
@@ -43,7 +47,8 @@
       "height": 1,
       "linksToNeighbours": "true",
       "enclosesRooms": "false",
-      "is3D": "false"
+      "is3D": "false",
+      "floorHeight": 0
     },
     {
       "type": "Door",
@@ -52,7 +57,8 @@
       "height": 1,
       "linksToNeighbours": "false",
       "enclosesRooms": "true",
-      "is3D": "true"
+      "is3D": "true",
+      "floorHeight": 0
     },
     {
       "type": "Round_Table",
@@ -61,7 +67,38 @@
       "height": 1,
       "linksToNeighbours": "false",
       "enclosesRooms": "false",
-      "is3D": "true"
+      "is3D": "true",
+      "floorHeight": 0
+    },
+    {
+      "type": "Ceiling",
+      "pathfindingCost": 1,
+      "width": 1,
+      "height": 1,
+      "linksToNeighbours": "true",
+      "enclosesRooms": "false",
+      "is3D": "true",
+      "floorHeight": 3
+    },
+    {
+      "type": "Block",
+      "pathfindingCost": 1,
+      "width": 1,
+      "height": 1,
+      "linksToNeighbours": "true",
+      "enclosesRooms": "false",
+      "is3D": "true",
+      "floorHeight": 0
+    },
+    {
+      "type": "CashRegister",
+      "pathfindingCost": 1,
+      "width": 1,
+      "height": 1,
+      "linksToNeighbours": "false",
+      "enclosesRooms": "false",
+      "is3D": "true",
+      "floorHeight": 0
     }
   ]
 }

@@ -1,0 +1,22 @@
+{
+  "character_prototypes": [
+    {
+      "type": "Tradesperson",
+      "is3D": "false",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "type": "Barista",
+      "is3D": "false",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "type": "Customer",
+      "is3D": "false",
+      "width": 1,
+      "height": 1
+    }
+  ]
+}

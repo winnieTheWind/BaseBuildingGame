@@ -1,31 +1,42 @@
+
+
+
+
 using UnityEngine;
 using System;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
+using System.Collections.Generic;
 using MoonSharp.Interpreter;
+using Unity.Jobs;
+using Unity.Collections.LowLevel.Unsafe;
 
-public enum CharacterType
-{
-    Default,
-    ConstructionWorker,
-    ShopEmployee,
-    // Add more types as needed
-}
+//public enum CharacterType
+//{
+//    Default,
+//    ConstructionWorker,
+//    ShopEmployee,
+//    // Add more types as needed
+//}
 
 [MoonSharpUserData]
 public class Character : IXmlSerializable, ISelectableInterface
 {
-    public CharacterType Type { get; set; }
+    //public CharacterType Type { get; set; }
+
+    protected Dictionary<string, float> charParameters;
+
+    public Character characterPrototype;
+
+    Action<Tile> cbTileChanged;
 
     public float X
     {
         get
         {
             if (nextTile == null)
-            {
                 return CurrTile.X;
-            }
 
             return Mathf.Lerp(CurrTile.X, nextTile.X, movementPercentage);
         }
@@ -36,9 +47,7 @@ public class Character : IXmlSerializable, ISelectableInterface
         get
         {
             if (nextTile == null)
-            {
                 return CurrTile.Z;
-            }
 
             return Mathf.Lerp(CurrTile.Z, nextTile.Z, movementPercentage);
         }
@@ -53,17 +62,17 @@ public class Character : IXmlSerializable, ISelectableInterface
         {
             if (_currTile != null)
             {
-                _currTile.characters.Remove(this);
+                _currTile.Characters.Remove(this);
             }
 
             _currTile = value;
-            _currTile.characters.Add(this);
+            _currTile.Characters.Add(this);
         }
     }
 
-    // If we aren't moving, then destTile = CurrTile
+    // If we aren't moving, then destTile = currTile
     Tile _destTile;
-    Tile DestTile
+    public Tile DestTile
     {
         get { return _destTile; }
         set
@@ -76,26 +85,99 @@ public class Character : IXmlSerializable, ISelectableInterface
         }
     }
 
-    Tile nextTile;  // The next tile in the pathfinding sequence
-    Path_AStar pathAStar;
-    float movementPercentage; // Goes from 0 to 1 as we move from CurrTile to destTile
+    // This represents the BASE tile of the object -- but in practice, large objects may actually occupy
+    // multile tiles.
+    public Tile Tile
+    {
+        get; set;
+    }
 
-    float speed = 5f;   // Tiles per second
+    public Tile nextTile;  // The next tile in the pathfinding sequence
+    public Path_AStar pathAStar;
+    public float movementPercentage; // Goes from 0 to 1 as we move from currTile to destTile
+
+    public float speed = 5f;   // Tiles per second
 
     Action<Character> cbCharacterChanged;
 
-    Job myJob;
+    public Job myJob;
 
-    public Inventory inventory;
+    // The item we are carrying (not gear/equipment)
+    public Inventory Inventory;
+
+    // This "objectType" will be queried by the visual system to know what sprite to render for this object
+
+    private string _Type = null;
+    public string Type
+    {
+        get
+        {
+            return _Type;
+        }
+        set
+        {
+            _Type = value;
+        }
+    }
+
+    // For example, a sofa might be 3x2 (actual graphics only appear to cover the 3x1 area, but the extra row is for leg room.)
+    public int Width { get; protected set; }
+    public int Height { get; protected set; }
+
+    Func<Tile, bool> funcPositionValidation;
+
+    public Job MyJob;
 
     public Character()
     {
         // Use only for serialization
+        this.funcPositionValidation = this.DEFAULT__IsValidPosition;
+        charParameters = new Dictionary<string, float>();
+        this.Height = 1;
+        this.Width = 1;
     }
 
     public Character(Tile tile)
     {
         CurrTile = DestTile = nextTile = tile;
+    }
+
+    // Copy Constructor -- don't call this directly, unless we never
+    // do ANY sub-classing. Instead use Clone(), which is more virtual.
+    protected Character(Character other)
+    {
+        this.Type = other.Type;
+
+        this.charParameters = new Dictionary<string, float>(other.charParameters);
+        if (other.funcPositionValidation != null)
+            this.funcPositionValidation = (Func<Tile, bool>)other.funcPositionValidation.Clone();
+    }
+
+    // Create furniture from parameters -- this will probably only ever be used for prototypes
+    public Character(string type)
+    {
+        Character obj = new Character();
+
+        this.Type = type;
+        // Assign the method directly to the delegate
+        this.funcPositionValidation = this.DEFAULT__IsValidPosition;
+
+        charParameters = new Dictionary<string, float>();
+    }
+
+    virtual public Character Clone()
+    {
+        return new Character(this);
+    }
+
+    public void RegisterTileChanged(Action<Tile> callbackfunc)
+    {
+        cbTileChanged += callbackfunc;
+    }
+
+    public void UnregisterTileChanged(Action<Tile> callbackfunc)
+    {
+        cbTileChanged -= callbackfunc;
     }
 
 
@@ -160,29 +242,29 @@ public class Character : IXmlSerializable, ISelectableInterface
             // No, we are missing something!
 
             // STEP 2: Are we CARRYING anything that the job location wants?
-            if (inventory != null)
+            if (Inventory != null)
             {
-                if (myJob.DesiresInventoryType(inventory) > 0)
+                if (myJob.DesiresInventoryType(Inventory) > 0)
                 {
                     // If so, deliver the goods.
                     //  Walk to the job tile, then drop off the stack into the job.
                     if (CurrTile == myJob.tile)
                     {
                         // We are at the job's site, so drop the inventory
-                        World.current.inventoryManager.PlaceInventory(myJob, inventory);
+                        World.current.inventoryManager.PlaceInventory(myJob, Inventory);
                         myJob.DoWork(0); // This will call all cbJobWorked callbacks, because even though
                                          // we aren't progressing, it might want to do something with the fact
                                          // that the requirements are being met.
 
                         // Are we still carrying things?
-                        if (inventory.stackSize == 0)
+                        if (Inventory.stackSize == 0)
                         {
-                            inventory = null;
+                            Inventory = null;
                         }
                         else
                         {
                             Debug.LogError("Character is still carrying inventory, which shouldn't be. Just setting to NULL for now, but this means we are LEAKING inventory.");
-                            inventory = null;
+                            Inventory = null;
                         }
 
                     }
@@ -198,13 +280,13 @@ public class Character : IXmlSerializable, ISelectableInterface
                     // We are carrying something, but the job doesn't want it!
                     // Dump the inventory at our feet
                     // TODO: Actually, walk to the nearest empty tile and dump it there.
-                    if (World.current.inventoryManager.PlaceInventory(CurrTile, inventory) == false)
+                    if (World.current.inventoryManager.PlaceInventory(CurrTile, Inventory) == false)
                     {
                         Debug.LogError("Character tried to dump inventory into an invalid tile (maybe there's already something here.");
                         // FIXME: For the sake of continuing on, we are still going to dump any
                         // reference to the current inventory, but this means we are "leaking"
                         // inventory.  This is permanently lost now.
-                        inventory = null;
+                        Inventory = null;
                     }
                 }
             }
@@ -213,16 +295,16 @@ public class Character : IXmlSerializable, ISelectableInterface
                 // At this point, the job still requires inventory, but we aren't carrying it!
 
                 // Are we standing on a tile with goods that are desired by the job?
-                if (CurrTile.inventory != null &&
-                    (myJob.canTakeFromStockpile || CurrTile.furniture == null || CurrTile.furniture.IsStockpile() == false) &&
-                    myJob.DesiresInventoryType(CurrTile.inventory) > 0)
+                if (CurrTile.Inventory != null &&
+                    (myJob.canTakeFromStockpile || CurrTile.Furniture == null || CurrTile.Furniture.IsStockpile() == false) &&
+                    myJob.DesiresInventoryType(CurrTile.Inventory) > 0)
                 {
                     // Pick up the stuff!
 
                     World.current.inventoryManager.PlaceInventory(
                         this,
-                        CurrTile.inventory,
-                        myJob.DesiresInventoryType(CurrTile.inventory)
+                        CurrTile.Inventory,
+                        myJob.DesiresInventoryType(CurrTile.Inventory)
                     );
 
                 }
@@ -240,7 +322,7 @@ public class Character : IXmlSerializable, ISelectableInterface
                     }
 
                     // Any chance we already have a path that leads to the items we want?
-                    if (pathAStar != null && pathAStar.EndTile() != null && pathAStar.EndTile().inventory != null && pathAStar.EndTile().inventory.objectType == desired.objectType)
+                    if (pathAStar != null && pathAStar.EndTile() != null && pathAStar.EndTile().Inventory != null && pathAStar.EndTile().Inventory.objectType == desired.objectType)
                     {
                         // We are already moving towards a tile that contains what we want!
                         // so....do nothing?
@@ -396,7 +478,7 @@ public class Character : IXmlSerializable, ISelectableInterface
         }
 
         // How much distance can be travel this Update?
-        float distThisFrame = speed / nextTile.movementCost * deltaTime;
+        float distThisFrame = speed / nextTile.MovementCost * deltaTime;
 
         // How much is that in terms of percentage to our destination?
         float percThisFrame = distThisFrame / distToTravel;
@@ -425,6 +507,30 @@ public class Character : IXmlSerializable, ISelectableInterface
 
         if (cbCharacterChanged != null)
             cbCharacterChanged(this);
+    }
+
+    protected bool DEFAULT__IsValidPosition(Tile t)
+    {
+        for (int x_off = t.X; x_off < (t.X + Width); x_off++)
+        {
+            for (int z_off = t.Z; z_off < (t.Z + Height); z_off++)
+            {
+                Tile t2 = World.current.GetTileAt(x_off, z_off);
+
+                if (t2.Type != TileType.Empty)
+                {
+                    return false;
+                }
+
+                // Make sure tile doesnt already have furniture
+                if (t2.Furniture != null)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true; // Or whatever logic you need here
     }
 
     public void SetDestination(Tile tile)
@@ -470,10 +576,12 @@ public class Character : IXmlSerializable, ISelectableInterface
     {
         writer.WriteAttributeString("X", CurrTile.X.ToString());
         writer.WriteAttributeString("Z", CurrTile.Z.ToString());
+        writer.WriteAttributeString("Name", Type.ToString());
     }
 
     public void ReadXml(XmlReader reader)
     {
+        // This method needs to exist for the XML serialization to work.
     }
 
     public string GetFormattedCharacterType()
@@ -504,6 +612,5 @@ public class Character : IXmlSerializable, ISelectableInterface
         return "100/100";
     }
     #endregion
-
-   
 }
+

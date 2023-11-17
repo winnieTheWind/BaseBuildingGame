@@ -55,7 +55,7 @@ public class Path_TileGraph
 
             for (int i = 0; i < neighbours.Length; i++)
             {
-                if (neighbours[i] != null && neighbours[i].movementCost > 0)
+                if (neighbours[i] != null && neighbours[i].MovementCost > 0)
                 {
                     // This neighbour exists and is walkable, so create an edge.
 
@@ -66,7 +66,7 @@ public class Path_TileGraph
                     }
 
                     Path_Edge<Tile> e = new Path_Edge<Tile>();
-                    e.cost = neighbours[i].movementCost;
+                    e.cost = neighbours[i].MovementCost;
                     e.node = nodes[neighbours[i]];
 
                     // Add the edge to our temporary (and growable!) list
@@ -91,13 +91,13 @@ public class Path_TileGraph
             int dX = curr.X - neigh.X;
             int dZ = curr.Z - neigh.Z;
 
-            if (World.current.GetTileAt(curr.X - dX, curr.Z).movementCost == 0)
+            if (World.current.GetTileAt(curr.X - dX, curr.Z).MovementCost == 0)
             {
                 // East or west is unwalkable this would be a clipped movement
                 return true;
             }
 
-            if (World.current.GetTileAt(curr.X, curr.Z - dZ).movementCost == 0)
+            if (World.current.GetTileAt(curr.X, curr.Z - dZ).MovementCost == 0)
             {
                 // North or south is unwalkable this would be a clipped movement
                 return true;

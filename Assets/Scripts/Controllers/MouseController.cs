@@ -3,12 +3,21 @@ using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
 using static Unity.Burst.Intrinsics.X86;
+using UnityEngine.TextCore.Text;
 
 public class MouseController : MonoBehaviour
 {
     public InputActionAsset cameraControls;
+
     private InputAction panAction;
+    private InputAction rotateCaneraAction;
+
+    public GameObject CameraPosition;
+    public GameObject CameraRotation;
+
     private Vector2 pan;
+    private Vector2 rotation;
+
     public float panSpeed = 20f;
     public GameObject Cursor;
 
@@ -20,6 +29,7 @@ public class MouseController : MonoBehaviour
 
     BuildModeController bmc;
     FurnitureMeshController fmc;
+    CharacterSpriteController csc;
 
     bool isDragging = false;
 
@@ -36,23 +46,29 @@ public class MouseController : MonoBehaviour
     void Awake()
     {
         var cameraActionMap = cameraControls.FindActionMap("Camera");
+
         panAction = cameraActionMap.FindAction("Pan");
+        rotateCaneraAction = cameraActionMap.FindAction("CameraRotate");
+
     }
 
     void OnEnable()
     {
         panAction.Enable();
+        rotateCaneraAction.Enable();
     }
 
     void OnDisable()
     {
         panAction.Disable();
+        rotateCaneraAction.Disable();
     }
 
     private void Start()
     {
         bmc = GameObject.FindAnyObjectByType<BuildModeController>();
         fmc = GameObject.FindAnyObjectByType<FurnitureMeshController>();
+        csc = GameObject.FindAnyObjectByType<CharacterSpriteController>();
 
         dragPreviewGameObjects = new List<GameObject>();
     }
@@ -183,17 +199,17 @@ public class MouseController : MonoBehaviour
     {
 
         // Make sure stuffInTile is big enough to handle all the characters, plus the 3 extra values
-        mySelection.stuffInTile = new ISelectableInterface[mySelection.tile.characters.Count + 3];
+        mySelection.stuffInTile = new ISelectableInterface[mySelection.tile.Characters.Count + 3];
 
         // Copy the character references
-        for (int i = 0; i < mySelection.tile.characters.Count; i++)
+        for (int i = 0; i < mySelection.tile.Characters.Count; i++)
         {
-            mySelection.stuffInTile[i] = mySelection.tile.characters[i];
+            mySelection.stuffInTile[i] = mySelection.tile.Characters[i];
         }
 
         // Now assign references to the other three sub-selections available
-        mySelection.stuffInTile[mySelection.stuffInTile.Length - 3] = mySelection.tile.furniture;
-        mySelection.stuffInTile[mySelection.stuffInTile.Length - 2] = mySelection.tile.inventory;
+        mySelection.stuffInTile[mySelection.stuffInTile.Length - 3] = mySelection.tile.Furniture;
+        mySelection.stuffInTile[mySelection.stuffInTile.Length - 2] = mySelection.tile.Inventory;
         mySelection.stuffInTile[mySelection.stuffInTile.Length - 1] = mySelection.tile;
 
     }
@@ -296,10 +312,10 @@ public class MouseController : MonoBehaviour
                     {
                         ShowFurnitureObjectAtTile(bmc.buildModeObjectType, t);
                     }
-                    //else if (bmc.buildMode == BuildMode.SPAWNCHARACTER)
-                    //{
-                    //    ShowCharacterObjectAtTile(bmc.buildModeObjectType, t);
-                    //}
+                    else if (bmc.buildMode == BuildMode.CHARACTER)
+                    {
+                        ShowCharacterObjectAtTile(bmc.buildModeObjectType, t);
+                    }
                     else
                     {
                         //Show the generic dragging visuals
@@ -330,6 +346,38 @@ public class MouseController : MonoBehaviour
                 }
             }
         }
+    }
+
+
+    void ShowCharacterObjectAtTile(string characterType, Tile t)
+    {
+        GameObject go = new GameObject();
+        go.transform.SetParent(this.transform, true);
+        dragPreviewGameObjects.Add(go);
+        go.name = "Character";
+
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = csc.GetSpriteForCharacter(characterType + "Sprite_7");
+        sr.color = new Color(0.5f, 1f, 0.5f, 0.25f);
+        sr.sortingLayerName = "Characters";
+
+        Character proto = World.current.characterPrototypes[characterType];
+        go.transform.rotation = Quaternion.Euler(0, 0, 0);
+
+        go.transform.position = new Vector3(t.X + ((proto.Width) / 1f), 0.904f, t.Z + ((proto.Height) / 1f));
+        go.transform.localScale = new Vector3(1, 1, 1);
+        go.AddComponent<BillboardController>();
+
+        //if (WorldController.Instance.world.IsCharacterPlacementValid(characterType, t))
+        //{
+        //    go.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 0.5f);
+        //}
+        //else
+        //{
+        //    go.GetComponent<SpriteRenderer>().material.color = new Color(1f, 0.5f, 0.5f, 1f);
+        //}
+
+        go.transform.rotation = Quaternion.Euler(90, 0, 0);
     }
 
     void ShowLayerFloorAtTile(string layerFloorType, Tile t)
@@ -384,8 +432,8 @@ public class MouseController : MonoBehaviour
                 Tile northTile = World.current.GetTileAt(t.X, t.Z + 1);
                 Tile southTile = World.current.GetTileAt(t.X, t.Z - 1);
 
-                if (northTile != null && southTile != null && northTile.furniture != null && southTile.furniture != null &&
-                    northTile.furniture.objectType == "Wall" && southTile.furniture.objectType == "Wall")
+                if (northTile != null && southTile != null && northTile.Furniture != null && southTile.Furniture != null &&
+                    northTile.Furniture.ObjectType == "Wall" && southTile.Furniture.ObjectType == "Wall")
                 {
                     go.transform.rotation = Quaternion.Euler(0, 90, 0);
                 }
@@ -423,15 +471,63 @@ public class MouseController : MonoBehaviour
 
     void UpdateCameraMovement()
     {
-        if (Mouse.current.rightButton.isPressed)
+        
+        if (Keyboard.current.shiftKey.isPressed)
         {
-            pan = panAction.ReadValue<Vector2>();
-            Vector3 panMovement = new Vector3(-pan.x, 0, -pan.y) * Time.deltaTime * panSpeed;
-            Camera.main.transform.position += panMovement;
+            if (Mouse.current.rightButton.isPressed)
+            {
+                rotation = rotateCaneraAction.ReadValue<Vector2>();
+                // Adjust these values as needed
+                float rotationSpeedX = 0.4f;
+
+                // Apply rotation
+                CameraRotation.transform.Rotate(Vector3.up, -rotation.x * rotationSpeedX, Space.World);
+            }
+        } else
+        {
+            if (Mouse.current.rightButton.isPressed)
+            {
+                pan = panAction.ReadValue<Vector2>();
+                // Create a panning vector in world space
+                Vector3 panMovementWorld = new Vector3(-pan.x, 0, -pan.y);
+
+                // Transform the panning vector to the camera's local space
+                Vector3 panMovementLocal = CameraRotation.transform.TransformDirection(panMovementWorld);
+
+                // Apply panning in local space
+                CameraPosition.transform.localPosition += panMovementLocal * Time.deltaTime * panSpeed;
+            }
+
+            if (Keyboard.current.digit1Key.wasPressedThisFrame)
+            {
+                // Reset the rotation to Euler angles 50, 0, 0
+                CameraRotation.transform.rotation = Quaternion.Euler(0, 0, 0);
+            }
+
+            if (Keyboard.current.digit2Key.wasPressedThisFrame)
+            {
+                // Reset the rotation to Euler angles 50, 0, 0
+                CameraRotation.transform.rotation = Quaternion.Euler(0, 90, 0);
+            }
+
+            if (Keyboard.current.digit3Key.wasPressedThisFrame)
+            {
+                // Reset the rotation to Euler angles 50, 0, 0
+                CameraRotation.transform.rotation = Quaternion.Euler(0, 90 * 2, 0);
+            }
+
+            if (Keyboard.current.digit4Key.wasPressedThisFrame)
+            {
+                // Reset the rotation to Euler angles 50, 0, 0
+                CameraRotation.transform.rotation = Quaternion.Euler(0, 90 * 3, 0);
+            }
         }
 
         // Update lastFramePosition here for more accurate movement
         lastFramePosition = Camera.main.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         lastFramePosition.y = 0;  // Assuming ground is at y = 0
     }
+
+    // oK I need to assign these camera rotations like this, but this isnt working.
+
 }
