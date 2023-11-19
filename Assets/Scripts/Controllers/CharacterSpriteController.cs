@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TextCore.Text;
 using UnityEngine.U2D.Animation;
-using static UnityEditor.Progress;
 
 public class CharacterSpriteController : MonoBehaviour
 {
