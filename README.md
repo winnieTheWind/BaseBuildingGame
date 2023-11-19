@@ -1,7 +1,7 @@
 # BaseBuildingGame
 
 ## Description
-Based on Project Porcupine.
+Copied from Project Porcupine with some changes.
 
 ## Controls
 - **Left Mouse Button:** Place and select objects.
