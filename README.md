@@ -1,20 +1,15 @@
 # BaseBuildingGame
 
+## Description
 Based on Project Porcupine.
 
-Controls:
+## Controls
+- **Left Mouse Button:** Place and select objects.
+- **Right Mouse Button:** Pan Camera.
+- **Shift + Right Mouse Button:** Rotate camera.
 
-Left mouse button - Place and select
-Right mouse button - Pan Camera
-Shift + Right mouse button - Rotate camera
-
-Note:
-
-Currently, workers will only do Tile and Furniture jobs.
-
-Characters who have a Wall job to do need Steel Plates inventory,
-you can use the Mining Drone Station to create Steel Plates.
-
-Furniture can't be created on an Empty Tile.
-
-Characters can't move if its spawned on an Empty Tile.
+## Notes
+- Currently, workers will only do Tile and Furniture jobs.
+- Characters tasked with a Wall job need Steel Plates in their inventory. Use the Mining Drone Station to create Steel Plates.
+- Furniture cannot be created on an Empty Tile.
+- Characters cannot move if spawned on an Empty Tile.
