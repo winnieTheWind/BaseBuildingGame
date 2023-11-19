@@ -10,7 +10,8 @@ Copied from Project Porcupine with some changes.
 - **1, 2, 3, 4:** Makes camera look at either N, E, S or W.
 
 ## Notes
-- Currently, Characters will only do Tile and Furniture jobs.
+- Change the mode to Free Edit to spawn objects immediately.
+- Currently, Characters will only do Tile and Furniture jobs when in Game mode.
 - Characters tasked with a Wall job need Steel Plates available in the world. Use the Mining Drone Station to create Steel Plates.
 - Furniture cannot be created on an Empty Tile.
 - Characters cannot move if spawned on an Empty Tile.
