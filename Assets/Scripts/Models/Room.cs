@@ -283,12 +283,8 @@ public class Room
             // TODO
         }
 
-
-
         // Tell the world that a new room has been formed.
         World.current.AddRoom(newRoom);
-
-
     }
 
     public void AddCeiling()
@@ -302,11 +298,6 @@ public class Room
         {
             this.world.PlaceFurniture("Ceiling", t, false);
         }
-
-        //foreach (Tile t in GetSecondLevelBoundaryTiles())
-        //{
-        //    this.world.PlaceFurniture("Ceiling", t, false);
-        //}
     }
 
     public HashSet<Tile> GetBoundaryTiles()
@@ -327,32 +318,6 @@ public class Room
 
         return boundaryTiles;
     }
-
-    public HashSet<Tile> GetSecondLevelBoundaryTiles()
-    {
-        HashSet<Tile> firstLevelBoundary = GetBoundaryTiles();
-        HashSet<Tile> secondLevelBoundary = new HashSet<Tile>();
-
-        foreach (Tile boundaryTile in firstLevelBoundary)
-        {
-            foreach (Tile neighbor in boundaryTile.GetNeighbours(true))
-            {
-                // Exclude tiles that are part of the room or the first boundary
-                if (neighbor != null && !tiles.Contains(neighbor) && !firstLevelBoundary.Contains(neighbor) && !secondLevelBoundary.Contains(neighbor))
-                {
-                    secondLevelBoundary.Add(neighbor);
-                }
-            }
-        }
-
-        return secondLevelBoundary;
-    }
-
-    // Ok this is good. So I'm spawning edge objects on the outside of the room, which is great.
-
-    // I've seperated them between Ceiling and Edge. I need to check the neighbours..
-    // if there is a neighbour to the N, then do something..
-    // and so on
 
     void CopyGas(Room other)
     {

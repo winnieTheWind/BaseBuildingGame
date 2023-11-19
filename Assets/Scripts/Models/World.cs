@@ -36,14 +36,12 @@ public class World : IXmlSerializable
     // The tile height of the world
     public int Height { get; protected set; }
 
-    Action<Furniture> cbFurnitureCreated;
-    Action<Character> cbCharacterCreated;
-    Action<Inventory> cbInventoryCreated;
-    Action<LayerTile> cbLayerTileCreated;
-
-    Action<Tile> cbTileChanged;
-
-    Action<LayerTile> cbLayerTileRemoved;
+    public Action<Furniture> cbFurnitureCreated;
+    public Action<Character> cbCharacterCreated;
+    public Action<Inventory> cbInventoryCreated;
+    public Action<LayerTile> cbLayerTileCreated;
+    public Action<Tile> cbTileChanged;
+    public Action<LayerTile> cbLayerTileRemoved;
 
     // TODO: Most likely this will be replaced with a dedicated
     // class for managing job queues (plural!) that might also
@@ -161,8 +159,7 @@ public class World : IXmlSerializable
 
         Debug.Log("Created " + type);
 
-        if (cbCharacterCreated != null)
-            cbCharacterCreated(c);
+        cbCharacterCreated?.Invoke(c);
 
         return c;
     }
@@ -230,44 +227,22 @@ public class World : IXmlSerializable
         }
 
         layerTilePrototypes.Add("Dirt", new LayerTile(1, 1, "Dirt", true));
-        layerTilePrototypes.Add("Stockpile", new LayerTile(1, 1, "Stockpile", true));
 
         furniturePrototypes["Door"].SetParameter("openness", 0);
         furniturePrototypes["Door"].SetParameter("is_opening", 0);
-        furniturePrototypes["Door"].RegisterUpdateAction(FurnitureActions.Door_UpdateAction);
         furniturePrototypes["Door"].IsEnterable = FurnitureActions.Door_IsEnterable;
+
+        // All update actions
+        furniturePrototypes["Door"].RegisterUpdateAction(FurnitureActions.Door_UpdateAction);
         furniturePrototypes["Stockpile"].RegisterUpdateAction(FurnitureActions.Stockpile_UpdateAction);
-        furniturePrototypes["Stockpile"].Tint = new Color32(186, 31, 31, 255);
-        furniturePrototypes["Mining_Drone_Station"].JobSpotOffset = new Vector3(1, 0, 0);
         furniturePrototypes["Mining_Drone_Station"].RegisterUpdateAction(FurnitureActions.MiningDroneStation_UpdateAction);
         furniturePrototypes["Oxygen_Generator"].RegisterUpdateAction(FurnitureActions.OxygenGenerator_UpdateAction);
-
         furniturePrototypes["CashRegister"].RegisterUpdateAction(FurnitureActions.CashRegister_UpdateAction);
+
+
+        furniturePrototypes["Stockpile"].Tint = new Color32(186, 31, 31, 255);
+        furniturePrototypes["Mining_Drone_Station"].JobSpotOffset = new Vector3(1, 0, 0);
         furniturePrototypes["CashRegister"].JobSpotOffset = new Vector3(0, 0, 1);
-    }
-
-    public void SetupPathfindingExample()
-    {
-        Debug.Log("SetupPathfindingExample");
-
-        // Make a set of floors/walls to test pathfinding with.
-        int l = Width / 2 - 5;
-        int b = Height / 2 - 5;
-
-        for (int x = l - 5; x < l + 15; x++)
-        {
-            for (int y = b - 5; y < b + 15; y++)
-            {
-                tiles[x, y].Type = TileType.Grass;
-                if (x == l || x == (l + 9) || y == b || y == (b + 9))
-                {
-                    if (x != (l + 9) && y != (b + 4))
-                    {
-                        PlaceFurniture("Ceiling", tiles[x, y]);
-                    }
-                }
-            }
-        }
     }
     
     public Tile GetTileAt(int x, int z)
@@ -297,8 +272,18 @@ public class World : IXmlSerializable
             return null;
         }
 
-        furn.RegisterOnRemovedCallback(OnFurnitureRemoved);
+        // Register the removal event
+        furn.cbOnRemoved += OnFurnitureRemoved;
+
         furnitures.Add(furn);
+
+        if (objectType == "Stockpile")
+        {
+            if (World.current.inventoryManager.inventories.Count > 0)
+            {
+                FurnitureActions.Stockpile_Action(furn);
+            }
+        }
 
         // Do we need to recalculate our rooms?
         if (doRoomFloodFill && furn.RoomEnclosure)
@@ -306,16 +291,17 @@ public class World : IXmlSerializable
             Room.DoRoomFloodFill(furn.Tile, false);
         }
 
+        cbFurnitureCreated?.Invoke(furn);
+
         if (cbFurnitureCreated != null)
         {
-            cbFurnitureCreated(furn);
             if (furn.MovementCost != 1)
             {
-            // since tiles return movement cost as their base cost multiplied
-             // by the furnitures movement cose, a furniture movement cost
-            // of exactly 1 doesnt impact oour pathfinding system so we can
-            // occasionally avoid invalidating pathfinding graphs..f
-            InvalidateTileGraph(); // Reset the pathfinding system
+                // since tiles return movement cost as their base cost multiplied
+                // by the furnitures movement cose, a furniture movement cost
+                // of exactly 1 doesnt impact oour pathfinding system so we can
+                // occasionally avoid invalidating pathfinding graphs..f
+                InvalidateTileGraph(); // Reset the pathfinding system
             }
         }
 
@@ -348,74 +334,9 @@ public class World : IXmlSerializable
         layerTile.RegisterOnRemovedCallback(OnLayerTileRemoved);
         layerTiles.Add(layerTile);
 
-        if (cbLayerTileCreated != null)
-        {
-            cbLayerTileCreated(layerTile);
-        }
+        cbLayerTileCreated?.Invoke(layerTile);
 
         return layerTile;
-    }
-
-
-    public void RegisterLayerTileCreated(Action<LayerTile> callbackfunc)
-    {
-        cbLayerTileCreated += callbackfunc;
-    }
-
-    public void UnregisterLayerTileCreated(Action<LayerTile> callbackfunc)
-    {
-        cbLayerTileCreated -= callbackfunc;
-    }
-
-
-    public void RegisterFurnitureCreated(Action<Furniture> callbackfunc)
-    {
-        cbFurnitureCreated += callbackfunc;
-    }
-
-    public void UnregisterFurnitureCreated(Action<Furniture> callbackfunc)
-    {
-        cbFurnitureCreated -= callbackfunc;
-    }
-
-    public void RegisterCharacterCreated(Action<Character> callbackfunc)
-    {
-        cbCharacterCreated += callbackfunc;
-    }
-
-    public void UnregisterCharacterCreated(Action<Character> callbackfunc)
-    {
-        cbCharacterCreated -= callbackfunc;
-    }
-
-    public void RegisterInventoryCreated(Action<Inventory> callbackfunc)
-    {
-        cbInventoryCreated += callbackfunc;
-    }
-
-    public void UnregisterInventoryCreated(Action<Inventory> callbackfunc)
-    {
-        cbInventoryCreated -= callbackfunc;
-    }
-
-    public void RegisterTileChanged(Action<Tile> callbackfunc)
-    {
-        cbTileChanged += callbackfunc;
-    }
-
-    public void UnregisterTileChanged(Action<Tile> callbackfunc)
-    {
-        cbTileChanged -= callbackfunc;
-    }
-
-    public void RegisterLayerTileRemoved(Action<LayerTile> callbackfunc)
-    {
-        cbLayerTileRemoved += callbackfunc;
-    }
-
-    public void UnregisterLayerTileRemoved(Action<LayerTile> callbackfunc)
-    {
-        cbLayerTileRemoved -= callbackfunc;
     }
 
     // Gets called whenever ANY tile changes

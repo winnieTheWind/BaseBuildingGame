@@ -5,19 +5,16 @@ using TMPro;
 public class InventorySpriteController : MonoBehaviour
 {
     public GameObject inventoryUIPrefab;
+    public Material InventoryMaterial;
 
     Dictionary<Inventory, GameObject> inventoryGameObjectMap;
-
     Dictionary<string, Sprite> inventorySprites;
-
-    public Material InventoryMaterial;
 
     World world
     {
         get { return WorldController.Instance.world; }
     }
 
-    // Use this for initialization
     void Start()
     {
         LoadSprites();
@@ -25,9 +22,8 @@ public class InventorySpriteController : MonoBehaviour
         // Instantiate our dictionary that tracks which GameObject is rendering which Tile data.
         inventoryGameObjectMap = new Dictionary<Inventory, GameObject>();
 
-        // Register our callback so that our GameObject gets updated whenever
-        // the tile's type changes.
-        world.RegisterInventoryCreated(OnInventoryCreated);
+        // Register the creation of inventory event
+        world.cbInventoryCreated += OnInventoryCreated;
 
         // Check for pre-existing inventory, which won't do the callback.
         foreach (string objectType in world.inventoryManager.inventories.Keys)
@@ -37,9 +33,6 @@ public class InventorySpriteController : MonoBehaviour
                 OnInventoryCreated(inv);
             }
         }
-
-
-        //c.SetDestination( world.GetTileAt( world.Width/2 + 5, world.Height/2 ) );
     }
 
     void LoadSprites()
@@ -47,17 +40,14 @@ public class InventorySpriteController : MonoBehaviour
         inventorySprites = new Dictionary<string, Sprite>();
         Sprite[] sprites = Resources.LoadAll<Sprite>("Sprites/Inventory/");
 
-        //Debug.Log("LOADED RESOURCE:");
         foreach (Sprite s in sprites)
         {
-            //Debug.Log(s);
             inventorySprites[s.name] = s;
         }
     }
 
     public void OnInventoryCreated(Inventory inv)
     {
-        //Debug.Log("OnInventoryCreated");
         // Create a visual GameObject linked to this data.
 
         // FIXME: Does not consider multi-tile objects nor rotated objects
@@ -102,20 +92,15 @@ public class InventorySpriteController : MonoBehaviour
             ui_go.layer = 7;
         }
 
-        // Register our callback so that our GameObject gets updated whenever
-        // the object's into changes.
-        // FIXME: Add on changed callbacks
-        inv.RegisterChangedCallback( OnInventoryChanged );
-
+        // Register the changing of Inventory event
+        inv.cbInventoryChanged += OnInventoryChanged;
     }
 
     void OnInventoryChanged(Inventory inv)
     {
         // FIXME:  Still needs to work!  And get called!
 
-        //Debug.Log("OnFurnitureChanged");
         // Make sure the furniture's graphics are correct.
-
         if (inventoryGameObjectMap.ContainsKey(inv) == false)
         {
             Debug.LogError("OnCharacterChanged -- trying to change visuals for inventory not in our map.");
@@ -127,7 +112,6 @@ public class InventorySpriteController : MonoBehaviour
         inv_go.transform.position = new Vector3(inv.tile.X, 0.4f, inv.tile.Z);
         inv_go.transform.SetParent(this.transform, true);
         inv_go.layer = 8;
-
 
         if (inv.stackSize > 0)
         {
@@ -142,12 +126,9 @@ public class InventorySpriteController : MonoBehaviour
             // this stack has gone to zero, so remove the sprite.
             Destroy(inv_go);
             inventoryGameObjectMap.Remove(inv);
-            inv.UnregisterChangedCallback( OnInventoryChanged );
+
+            // Unregister the changing of Inventory event
+            inv.cbInventoryChanged -= OnInventoryChanged;
         }
-     
-
     }
-
-
-
 }

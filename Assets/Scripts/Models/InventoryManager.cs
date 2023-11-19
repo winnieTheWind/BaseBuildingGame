@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using MoonSharp.Interpreter;
+using System;
 
 [MoonSharpUserData]
 
@@ -10,6 +11,10 @@ public class InventoryManager
     // Later on this will likely be organized by rooms instead
     // of a single master list. (Or in addition to.)
     public Dictionary<string, List<Inventory>> inventories;
+
+    public InventoryManager Current { get; set; }
+
+    public static Action<Furniture> cbCreatedInventory;
 
     public InventoryManager()
     {
@@ -53,6 +58,22 @@ public class InventoryManager
         // We may also created a new stack on the tile, if the tile was previously empty.
         if (tileWasEmpty)
         {
+            List<Furniture> stockpiles = new List<Furniture>();
+            foreach (var item in World.current.furnitures)
+            {
+                if (item.ObjectType == "Stockpile")
+                {
+                    stockpiles.Add(item);
+
+                    if (stockpiles.Count > 0)
+                    {
+                        //FurnitureActions.Stockpile_Action(item);
+                        //cbCreatedInventory?.Invoke(item);
+
+                    }
+                }
+            }
+
             if (inventories.ContainsKey(tile.Inventory.objectType) == false)
             {
                 inventories[tile.Inventory.objectType] = new List<Inventory>();

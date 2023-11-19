@@ -44,11 +44,6 @@ public class BuildModeController : MonoBehaviour
         return proto.Width == 1 && proto.Height == 1;
     }
 
-    public void DoPathfindingTest()
-    {
-        WorldController.Instance.world.SetupPathfindingExample();
-    }
-
     public void SetMode_BuildCharacter(string characterType)
     {
         buildMode = BuildMode.CHARACTER;

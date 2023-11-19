@@ -6,15 +6,10 @@ using UnityEngine.U2D;
 public class TileSpriteController : MonoBehaviour
 {
     public Material TileMaterial;
-
     public Material WallMaterial;
-
     public GameObject BitmaskText;
 
     Dictionary<Tile, GameObject> tileGameObjectMap;
-    Dictionary<Tile, GameObject> layerTileGameObjectMap;
-
-
     Dictionary<string, Sprite> tileSprites;
 
     World world
@@ -36,9 +31,9 @@ public class TileSpriteController : MonoBehaviour
     void Start()
     {
         LoadSprites();
+
         // Instantiate dictionary which tracks which gameobject is rendering which tile data.
         tileGameObjectMap = new Dictionary<Tile, GameObject>();
-        layerTileGameObjectMap = new Dictionary<Tile, GameObject>();
 
         // Create a gameobject for each of our tiles
         for (int x = 0; x < world.Width; x++)
@@ -56,7 +51,6 @@ public class TileSpriteController : MonoBehaviour
                 tile_go.transform.position = new Vector3(tile_data.X, 0, tile_data.Z);
                 tile_go.transform.rotation = Quaternion.Euler(90, 0, 0);
                 tile_go.transform.SetParent(this.transform, true);
-                //tile_go.transform.localScale = new Vector3(2, 2, 2);
 
                 // Add a sprite renderer
                 SpriteRenderer sr = tile_go.AddComponent<SpriteRenderer>();
@@ -64,7 +58,6 @@ public class TileSpriteController : MonoBehaviour
                 sr.sprite = tileSprites["Grass"];
                 sr.material.SetTexture("Grass", tileSprites["Grass"].texture);
 
-                //sr.material.SetTexture("EmptySprite", SpriteManager.current.GetSprite("Tiles", Tile.).texture);
                 sr.sortingLayerName = "Tiles";
 
                 // Add a collider
@@ -75,7 +68,8 @@ public class TileSpriteController : MonoBehaviour
             }
         }
 
-        world.RegisterTileChanged(OnTileChanged);
+        // Register to the changing of tile event
+        world.cbTileChanged += OnTileChanged;
     }
 
     public void OnTileChanged(Tile tile_data)
@@ -92,11 +86,8 @@ public class TileSpriteController : MonoBehaviour
             return;
         }
 
-        //tile_go.transform.localScale = new Vector3(2, 2, 2);
         // Set the appropriate sprite based on the tile type.
         tile_go.GetComponent<SpriteRenderer>().sprite = tileSprites[tile_data.Type.ToString()];
-        //layerTile_go.GetComponent<SpriteRenderer>().sprite = tileSprites[tile_data.LayerTile.Type.ToString()];
-
     }
 }
 

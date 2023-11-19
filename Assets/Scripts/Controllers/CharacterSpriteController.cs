@@ -29,7 +29,8 @@ public class CharacterSpriteController : MonoBehaviour
 
         characterGameObjectMap = new Dictionary<Character, GameObject>();
 
-        world.RegisterCharacterCreated(OnCharacterCreated);
+        // Register the creation of character event
+        world.cbCharacterCreated += OnCharacterCreated;
 
         // Check for pre-existing characters, which won't do the callback.
         foreach (Character c in world.characters)
@@ -46,7 +47,6 @@ public class CharacterSpriteController : MonoBehaviour
         {
             characterSprites[item.name] = item;
         }
-
     }
 
     void LoadSpriteAssets()
@@ -104,7 +104,8 @@ public class CharacterSpriteController : MonoBehaviour
         SpriteResolver resolver = char_go.AddComponent<SpriteResolver>();
         resolver.SetCategoryAndLabel("WalkDown", "2");
 
-        character.RegisterOnChangedCallback(OnCharacterChanged);
+        // Register the changing of character event
+        character.cbCharacterChanged += OnCharacterChanged;
     }
 
     void OnCharacterChanged(Character c)

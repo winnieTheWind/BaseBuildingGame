@@ -24,7 +24,8 @@ public class FurnitureMeshController : MonoBehaviour
         // Instantiate dictionary which tracks which gameobject is rendering which tile data.
         furnitureGameObjectMap = new Dictionary<Furniture, GameObject>();
 
-        world.RegisterFurnitureCreated(OnFurnitureCreated);
+        // Register the creation of furniture event
+        world.cbFurnitureCreated += OnFurnitureCreated;
 
         // Go through any EXISTING furniture (i.e. from a save that was loaded OnEnable) and call the OnCreated event manually
         foreach (Furniture furn in world.furnitures)
@@ -59,10 +60,7 @@ public class FurnitureMeshController : MonoBehaviour
             return;
         }
 
-
         GameObject furn_go;
-
-        //Debug.Log("Created Object: " + furn.objectType);
 
         // Create a Visual GameObject linked to this data.
         if (furn.Is3D)
@@ -83,8 +81,6 @@ public class FurnitureMeshController : MonoBehaviour
             // Optionally, you might want to set the material of the MeshRenderer
             meshRenderer.material = MaterialManager.Instance.GetMaterial(furn.ObjectType + "Material");
 
-         
-
         } else
         {
             furn_go = new GameObject();
@@ -104,12 +100,9 @@ public class FurnitureMeshController : MonoBehaviour
 
         }
 
-       
-
-            // Register our callback so that our GameObject gets updated whenever
-            // the object's into changes.
-            furn.RegisterOnChangedCallback(OnFurnitureChanged);
-            furn.RegisterOnRemovedCallback(OnFurnitureRemoved);
+        // Register the changing and removal of furniture event
+        furn.cbOnChanged += OnFurnitureChanged;
+        furn.cbOnRemoved += OnFurnitureRemoved;
 
     }
 
@@ -139,13 +132,10 @@ public class FurnitureMeshController : MonoBehaviour
             return;
         }
 
-        //Debug.Log("OnFurnitureChanged");
-
         isUpdatingFurniture = true;
 
         GameObject oldFurn_go = furnitureGameObjectMap[furn];
 
-        //if (furn.objectType == "Wall" || furn.objectType == "Door")
         if (furn.Is3D)
         {
             // Destroy the old GameObject
@@ -159,10 +149,9 @@ public class FurnitureMeshController : MonoBehaviour
             GameObject newFurn_go = Instantiate(GetGameObjectForFurniture(furn), new Vector3(furn.Tile.X, furn.FloorHeight, furn.Tile.Z), Quaternion.identity);
             newFurn_go.name = updatedGameObjectName + "_" + furn.Tile.X + "_" + furn.Tile.Z;
             newFurn_go.transform.SetParent(this.transform, true);
+
             MeshRenderer meshRenderer = newFurn_go.GetComponent<MeshRenderer>();
-            // Optionally, you might want to set the material of the MeshRenderer
             meshRenderer.material = MaterialManager.Instance.GetMaterial(furn.ObjectType + "Material");
-            //meshRenderer.material.color = new Color(1f, 1f, 1f, 1f);
 
             //This hardcoding is not ideal!
             if (furn.ObjectType == "Door")
@@ -181,11 +170,6 @@ public class FurnitureMeshController : MonoBehaviour
                     newFurn_go.transform.rotation = Quaternion.Euler(0, 90, 0);
                 }
             }
-
-            //else if (furn.objectType == "Edge")
-            //{
-            //    HandleEdgeRotation(furn, newFurn_go);
-            //}
 
             // Update the map to point to the new GameObject
             furnitureGameObjectMap[furn] = newFurn_go;
@@ -235,10 +219,7 @@ public class FurnitureMeshController : MonoBehaviour
         //       Wall_NESWneseswnw
 
         return furnitureSprites[spriteName + suffix];
-
     }
-
-    
 
     private string GetSuffixForNeighbour(Furniture furn, int x, int z, string suffix)
     {
@@ -257,8 +238,6 @@ public class FurnitureMeshController : MonoBehaviour
                 return suffix;
             }
         }
-        
-
         return string.Empty;
     }
 
@@ -272,12 +251,8 @@ public class FurnitureMeshController : MonoBehaviour
         return string.Empty;
     }
 
-    // Okay this is what I have, what do I do when I need to check when their are more than one neighbour?
-    // Like if theirs a neighbour to the north and south?
-
     public GameObject GetGameObjectForFurniture(Furniture furn)
     {
-
         string gameObjectName = furn.ObjectType;
 
         if (furn.LinksToNeighbour == false)

@@ -22,7 +22,6 @@ public class WorldController : MonoBehaviour
         {
             _isPaused = value;
         }
-
     }
 
     public bool IsModal; // if true, a modal dialog box is open so normal inputs should be ignored.
@@ -53,7 +52,6 @@ public class WorldController : MonoBehaviour
             // TODO: Add pause/unpause, speed controls, etc
             world.Update(Time.deltaTime);
         }
-
     }
 
     public Tile GetTileAtWorldCoord(Vector3 coord)
@@ -61,7 +59,6 @@ public class WorldController : MonoBehaviour
         int x = Mathf.FloorToInt(coord.x);
         int z = Mathf.FloorToInt(coord.z);
         return world.GetTileAt(x, z);
-
     }
 
     public void NewWorld()
@@ -74,22 +71,17 @@ public class WorldController : MonoBehaviour
         return System.IO.Path.Combine(Application.persistentDataPath, "Saves");
     }
 
-
     public void LoadWorld(string fileName)
     {
-        //Debug.Log("LoadWorld button was clicked.");
-
         // Reload the scene to reset all data (and purge old references)
         loadWorldFromFile = fileName;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-
     }
 
     void CreateEmptyWorld()
     {
         // Create a world with Empty tiles
         world = new World(100, 100);
-
     }
 
     void CreateWorldFromSaveFile()

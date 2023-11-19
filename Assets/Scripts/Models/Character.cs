@@ -1,7 +1,3 @@
-
-
-
-
 using UnityEngine;
 using System;
 using System.Xml;
@@ -9,48 +5,18 @@ using System.Xml.Schema;
 using System.Xml.Serialization;
 using System.Collections.Generic;
 using MoonSharp.Interpreter;
-using Unity.Jobs;
-using Unity.Collections.LowLevel.Unsafe;
-
-//public enum CharacterType
-//{
-//    Default,
-//    ConstructionWorker,
-//    ShopEmployee,
-//    // Add more types as needed
-//}
 
 [MoonSharpUserData]
 public class Character : IXmlSerializable, ISelectableInterface
 {
-    //public CharacterType Type { get; set; }
-
-    protected Dictionary<string, float> charParameters;
-
-    public Character characterPrototype;
-
-    Action<Tile> cbTileChanged;
-
-    public float X
-    {
-        get
-        {
-            if (nextTile == null)
-                return CurrTile.X;
-
-            return Mathf.Lerp(CurrTile.X, nextTile.X, movementPercentage);
-        }
-    }
-
-    public float Z
-    {
-        get
-        {
-            if (nextTile == null)
-                return CurrTile.Z;
-
-            return Mathf.Lerp(CurrTile.Z, nextTile.Z, movementPercentage);
-        }
+    public string Type { get; set; }
+    public int Width { get; protected set; }
+    public int Height { get; protected set; }
+    public float Speed = 5f;   // Tiles per second
+    
+    public Tile Tile // This represents the BASE tile of the object -- 
+    { // but in practice, large objects may actually occupy multile tiles.
+        get; set;
     }
 
     private Tile _currTile;
@@ -85,48 +51,44 @@ public class Character : IXmlSerializable, ISelectableInterface
         }
     }
 
-    // This represents the BASE tile of the object -- but in practice, large objects may actually occupy
-    // multile tiles.
-    public Tile Tile
-    {
-        get; set;
-    }
-
     public Tile nextTile;  // The next tile in the pathfinding sequence
     public Path_AStar pathAStar;
     public float movementPercentage; // Goes from 0 to 1 as we move from currTile to destTile
 
-    public float speed = 5f;   // Tiles per second
-
-    Action<Character> cbCharacterChanged;
-
     public Job myJob;
+    Func<Tile, bool> funcPositionValidation;
 
-    // The item we are carrying (not gear/equipment)
-    public Inventory Inventory;
+    public Inventory Inventory; // The item we are carrying (not gear/equipment)
+    public Character characterPrototype;
 
-    // This "objectType" will be queried by the visual system to know what sprite to render for this object
+    protected float jobSearchCooldown = 0;
 
-    private string _Type = null;
-    public string Type
+    public Action<Character> cbCharacterChanged;
+    protected Action<Tile> cbTileChanged;
+
+    protected Dictionary<string, float> charParameters;
+
+    public float X
     {
         get
         {
-            return _Type;
-        }
-        set
-        {
-            _Type = value;
+            if (nextTile == null)
+                return CurrTile.X;
+
+            return Mathf.Lerp(CurrTile.X, nextTile.X, movementPercentage);
         }
     }
 
-    // For example, a sofa might be 3x2 (actual graphics only appear to cover the 3x1 area, but the extra row is for leg room.)
-    public int Width { get; protected set; }
-    public int Height { get; protected set; }
+    public float Z
+    {
+        get
+        {
+            if (nextTile == null)
+                return CurrTile.Z;
 
-    Func<Tile, bool> funcPositionValidation;
-
-    public Job MyJob;
+            return Mathf.Lerp(CurrTile.Z, nextTile.Z, movementPercentage);
+        }
+    }
 
     public Character()
     {
@@ -147,7 +109,6 @@ public class Character : IXmlSerializable, ISelectableInterface
     protected Character(Character other)
     {
         this.Type = other.Type;
-
         this.charParameters = new Dictionary<string, float>(other.charParameters);
         if (other.funcPositionValidation != null)
             this.funcPositionValidation = (Func<Tile, bool>)other.funcPositionValidation.Clone();
@@ -180,11 +141,8 @@ public class Character : IXmlSerializable, ISelectableInterface
         cbTileChanged -= callbackfunc;
     }
 
-
     void GetNewJob()
     {
-
-
         myJob = World.current.jobQueue.Dequeue();
         if (myJob == null)
             return;
@@ -206,10 +164,6 @@ public class Character : IXmlSerializable, ISelectableInterface
         }
     }
 
-    float jobSearchCooldown = 0;
-
-
-
     void Update_DoJob(float deltaTime)
     {
         // Do I have a job?
@@ -221,7 +175,6 @@ public class Character : IXmlSerializable, ISelectableInterface
                 // Don't look for job now.
                 return;
             }
-
 
             GetNewJob();
 
@@ -235,7 +188,6 @@ public class Character : IXmlSerializable, ISelectableInterface
         }
 
         // We have a job! (And the job tile is reachable)
-
         // STEP 1: Does the job have all the materials it needs?
         if (myJob.HasAllMaterial() == false)
         {
@@ -266,7 +218,6 @@ public class Character : IXmlSerializable, ISelectableInterface
                             Debug.LogError("Character is still carrying inventory, which shouldn't be. Just setting to NULL for now, but this means we are LEAKING inventory.");
                             Inventory = null;
                         }
-
                     }
                     else
                     {
@@ -293,7 +244,6 @@ public class Character : IXmlSerializable, ISelectableInterface
             else
             {
                 // At this point, the job still requires inventory, but we aren't carrying it!
-
                 // Are we standing on a tile with goods that are desired by the job?
                 if (CurrTile.Inventory != null &&
                     (myJob.canTakeFromStockpile || CurrTile.Furniture == null || CurrTile.Furniture.IsStockpile() == false) &&
@@ -311,7 +261,6 @@ public class Character : IXmlSerializable, ISelectableInterface
                 else
                 {
                     // Walk towards a tile containing the required goods.
-
                     // Find the first thing in the Job that isn't satisfied.
                     Inventory desired = myJob.GetFirstDesiredInventory();
 
@@ -344,9 +293,6 @@ public class Character : IXmlSerializable, ISelectableInterface
                             return;
                         }
 
-
-                        //Debug.Log("pathAStar returned with length of: " + newPath.Length());
-
                         if (newPath == null || newPath.Length() == 0)
                         {
                             //Debug.Log("No tile contains objects of type '" + desired.objectType + "' to satisfy job requirements.");
@@ -366,7 +312,6 @@ public class Character : IXmlSerializable, ISelectableInterface
                     // One way or the other, we are now on route to an object of the right type.
                     return;
                 }
-
             }
 
             return; // We can't continue until all materials are satisfied.
@@ -425,27 +370,11 @@ public class Character : IXmlSerializable, ISelectableInterface
 
                 // Let's ignore the first tile, because that's the tile we're currently in.
                 nextTile = pathAStar.Dequeue();
-
             }
-
 
             // Grab the next waypoint from the pathing system!
             nextTile = pathAStar.Dequeue();
-
-            if (nextTile == CurrTile)
-            {
-                //Debug.LogError("Update_DoMovement - nextTile is CurrTile?");
-            }
         }
-
-        //if(pathAStar.Length() == 0) {
-        //    return;
-        //}
-
-        // Chatgpt, this is where I can stop the player at the second to last tile, before the initial
-        // destination tile. However... CON
-
-        // At this point we should have a valid nextTile to move to.
 
         // What's the total distance from point A to point B?
         // We are going to use Euclidean distance FOR NOW...
@@ -478,7 +407,7 @@ public class Character : IXmlSerializable, ISelectableInterface
         }
 
         // How much distance can be travel this Update?
-        float distThisFrame = speed / nextTile.MovementCost * deltaTime;
+        float distThisFrame = Speed / nextTile.MovementCost * deltaTime;
 
         // How much is that in terms of percentage to our destination?
         float percThisFrame = distThisFrame / distToTravel;
@@ -505,8 +434,7 @@ public class Character : IXmlSerializable, ISelectableInterface
         Update_DoJob(deltaTime);
         Update_DoMovement(deltaTime);
 
-        if (cbCharacterChanged != null)
-            cbCharacterChanged(this);
+        cbCharacterChanged?.Invoke(this);
     }
 
     protected bool DEFAULT__IsValidPosition(Tile t)

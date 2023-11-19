@@ -24,7 +24,8 @@ public class LayerTileSpriteController : MonoBehaviour
         // Instantiate dictionary which tracks which gameobject is rendering which tile data.
         LayerTileGameObjectMap = new Dictionary<LayerTile, GameObject>();
 
-        world.RegisterLayerTileCreated(OnLayerTileCreated);
+        // Register the creation of LayerTile event
+        world.cbLayerTileCreated += OnLayerTileCreated;
 
         // Go through any EXISTING furniture (i.e. from a save that was loaded OnEnable) and call the OnCreated event manually
         foreach (LayerTile layerTile in world.layerTiles)
@@ -40,9 +41,7 @@ public class LayerTileSpriteController : MonoBehaviour
         foreach (Sprite sprite in sprites)
         {
             LayerTileSprites[sprite.name] = sprite;
-            //Debug.Log(sprite.name);
         }
-
     }
 
     public void OnLayerTileCreated(LayerTile layerTile)
@@ -54,6 +53,7 @@ public class LayerTileSpriteController : MonoBehaviour
         }
 
         GameObject layerTile_go = new GameObject();
+
         // add our tile/GO pair to the dictionary
         LayerTileGameObjectMap.Add(layerTile, layerTile_go);
 
@@ -68,10 +68,9 @@ public class LayerTileSpriteController : MonoBehaviour
 
         sr.material = TileMaterial;
 
-        // Register our callback so that our GameObject gets updated whenever
-        // the object's into changes.
-        layerTile.RegisterOnChangedCallback(OnLayerTileChanged);
-        layerTile.RegisterOnRemovedCallback(OnLayerTileRemoved);
+        // Register to the changing and removal of LayerTile event
+        layerTile.cbOnChanged += OnLayerTileChanged;
+        layerTile.cbOnRemoved += OnLayerTileRemoved;
     }
 
     void OnLayerTileRemoved(LayerTile layerTile_data)
@@ -92,10 +91,8 @@ public class LayerTileSpriteController : MonoBehaviour
         }
     }
 
-
     void OnLayerTileChanged(LayerTile layerTile)
     {
-
         if (LayerTileGameObjectMap.ContainsKey(layerTile) == false)
         {
             Debug.LogError("OnLayerTileChanged -- trying to change the visuals for layer tile not in our map.");
@@ -114,11 +111,8 @@ public class LayerTileSpriteController : MonoBehaviour
         layerTile_go.GetComponent<SpriteRenderer>().sprite = GetSpriteForTile(layerTile);
         layerTile_go.GetComponent<SpriteRenderer>().material = TileMaterial;
 
-
         isUpdatingLayerTiles = false;
-
     }
-
 
     public Sprite GetSpriteForTile(LayerTile layerTile)
     {

@@ -6,18 +6,16 @@ public class SoundController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        WorldController.Instance.world.RegisterFurnitureCreated( OnFurnitureCreated );
-        WorldController.Instance.world.RegisterTileChanged(OnTileChanged);
-        WorldController.Instance.world.RegisterLayerTileCreated(OnLayerTileCreated);
-        WorldController.Instance.world.RegisterLayerTileRemoved(OnLayerTileRemoved);
+        World.current.cbFurnitureCreated += OnFurnitureCreated;
+        World.current.cbTileChanged += OnTileChanged;
+        World.current.cbLayerTileCreated += OnLayerTileCreated;
+        World.current.cbLayerTileRemoved += OnLayerTileRemoved;
     }
 
-    // Update is called once per frame
     void Update()
     {
         soundCoolDown -= Time.deltaTime;
     }
-
 
     void OnLayerTileCreated(LayerTile tile_data)
     {

@@ -291,47 +291,13 @@ public class Furniture : IXmlSerializable, ISelectableInterface
         return obj;
     }
 
-
-    public void RegisterOnChangedCallback(Action<Furniture> callbackFunc)
-    {
-        cbOnChanged += callbackFunc;
-    }
-
-    public void UnregisterOnChangedCallback(Action<Furniture> callbackFunc)
-    {
-        cbOnChanged -= callbackFunc;
-    }
-
-    public void RegisterOnCeilingFurnitureChangedCallback(Action<Furniture> callbackFunc)
-    {
-        cbOnCeilingFurnitureChanged += callbackFunc;
-    }
-
-    public void UnregisterOnCeilingFurnitureChangedCallback(Action<Furniture> callbackFunc)
-    {
-        cbOnCeilingFurnitureChanged -= callbackFunc;
-    }
-
-    public void RegisterOnRemovedCallback(Action<Furniture> callbackFunc)
-    {
-        cbOnRemoved += callbackFunc;
-    }
-
-    public void UnregisterOnRemovedCallback(Action<Furniture> callbackFunc)
-    {
-        cbOnRemoved -= callbackFunc;
-    }
-
     public bool IsValidPosition(Tile t)
     {
         return funcPositionValidation(t);
     }
 
     // This part should remain unchanged
-    // FIXME: These functions should never be called directly,
-    // This will be replaced by validation checks fed to use fro lua files
-    // that will be customizable for each of piece of furniture.
-    // For ex. a dor might be specific that it needs two walls to connect to.
+    // This function should never be called directly,
 
     protected bool DEFAULT__IsValidPosition(Tile t)
     {
@@ -485,7 +451,10 @@ public class Furniture : IXmlSerializable, ISelectableInterface
     {
         j.furniture = this;
         jobs.Add(j);
-        j.RegisterJobStoppedCallback(OnJobStopped);
+
+        // Register stopping of job event
+        j.cbJobStopped += OnJobStopped;
+
         World.current.jobQueue.Enqueue(j);
     }
 
@@ -496,7 +465,9 @@ public class Furniture : IXmlSerializable, ISelectableInterface
 
     protected void RemoveJob(Job j)
     {
-        j.UnregisterJobStoppedCallback(OnJobStopped);
+        // Unregister stopping of job event
+        j.cbJobStopped -= OnJobStopped;
+
         jobs.Remove(j);
         j.furniture = null;
 
@@ -527,8 +498,6 @@ public class Furniture : IXmlSerializable, ISelectableInterface
 
     public void Deconstruct()
     {
-        UnityEngine.Debug.Log("Deconstruct");
-
         Tile.UnplaceFurniture();
 
         if (cbOnRemoved != null)

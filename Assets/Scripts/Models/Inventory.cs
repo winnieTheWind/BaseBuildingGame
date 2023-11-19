@@ -23,15 +23,13 @@ public class Inventory : IXmlSerializable, ISelectableInterface
             if (_stackSize != value)
             {
                 _stackSize = value;
-                if (cbInventoryChanged != null)
-                {
-                    cbInventoryChanged(this);
-                }
+
+                cbInventoryChanged?.Invoke(this);
             }
         }
     }
 
-    Action<Inventory> cbInventoryChanged;
+    public Action<Inventory> cbInventoryChanged;
 
     public Tile tile;
     public Character character;

@@ -34,9 +34,9 @@ public class Job
 
     public bool acceptsAnyInventoryItem = false;
 
-    Action<Job> cbJobCompleted; // We have finished the work cycle and so things should probably get built or whatever.
-    Action<Job> cbJobStopped; // The job has been stopped, either because its non-repeating or was cancelled.
-    Action<Job> cbJobWorked; // Gets called each time some work is performed -- maybe update the ui?
+    public Action<Job> cbJobCompleted; // We have finished the work cycle and so things should probably get built or whatever.
+    public Action<Job> cbJobStopped; // The job has been stopped, either because its non-repeating or was cancelled.
+    public Action<Job> cbJobWorked; // Gets called each time some work is performed -- maybe update the ui?
 
     public bool canTakeFromStockpile = true;
 
