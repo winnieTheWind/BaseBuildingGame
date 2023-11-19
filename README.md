@@ -11,6 +11,6 @@ Copied from Project Porcupine with some changes.
 
 ## Notes
 - Currently, Characters will only do Tile and Furniture jobs.
-- Characters tasked with a Wall job need Steel Plates in their inventory. Use the Mining Drone Station to create Steel Plates.
+- Characters tasked with a Wall job need Steel Plates available in the world. Use the Mining Drone Station to create Steel Plates.
 - Furniture cannot be created on an Empty Tile.
 - Characters cannot move if spawned on an Empty Tile.
